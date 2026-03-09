@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  user_id  Int      @id @default(autoincrement())
+  username String   @unique
+  role     String   // admin, editor, viewer
+  vetos    Veto[]
+  changes  ChangeLog[]
+}
+
+model Player {
+  player_id   Int      @id @default(autoincrement())
+  player_name String   @unique
+  verein      String
+  vetos       Veto[]
+}
+
+model Snapshot {
+  snapshot_id Int      @id @default(autoincrement())
+  week_id     String   // e.g., 2026-W42
+  timestamp   DateTime @default(now())
+  backups     RawBackup[]
+  values      SnapshotPlayerValue[]
+  changes     ChangeLog[]
+}
+
+model RawBackup {
+  backup_id   Int      @id @default(autoincrement())
+  snapshot_id Int
+  snapshot    Snapshot @relation(fields: [snapshot_id], references: [snapshot_id])
+  file_path   String
+  type        String   // raw, parsed, computed
+  created_at  DateTime @default(now())
+}
+
+model SnapshotPlayerValue {
+  id                      Int      @id @default(autoincrement())
+  snapshot_id             Int
+  snapshot                Snapshot @relation(fields: [snapshot_id], references: [snapshot_id])
+  player_name             String
+  verein                  String
+  gespielte_single_spiele Int
+  gespielte_legs          Int
+  avg_total               Float
+  avg_9                   Float
+  avg_18                  Float
+  wins                    Int
+  games_played            Int
+  siegequote_pct          Float
+  cnt_80                  Int
+  cnt_100                 Int
+  cnt_140                 Int
+  cnt_180                 Int
+  sum_high_scores         Int
+  avg_high_per_leg        Float
+  points_k1               Int
+  points_k2               Int
+  points_k3               Int
+  points_k4               Int
+  points_k5               Int
+  total_points            Int
+  rank                    Int
+  source                  String
+  source_id               String?
+  timestamp_source        DateTime?
+  aggregations_meta       String?  // Store JSON as string in SQLite
+  veto_flag               Boolean  @default(false)
+
+  @@unique([snapshot_id, player_name])
+}
+
+model Veto {
+  veto_id     Int      @id @default(autoincrement())
+  player_name String
+  player      Player   @relation(fields: [player_name], references: [player_name])
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [user_id])
+  active      Boolean  @default(true)
+  reason      String?
+  created_at  DateTime @default(now())
+}
+
+model ChangeLog {
+  change_id          Int      @id @default(autoincrement())
+  snapshot_id        Int
+  snapshot           Snapshot @relation(fields: [snapshot_id], references: [snapshot_id])
+  player_name        String
+  field_name         String
+  old_value          String?
+  new_value          String?
+  user_id            Int
+  user               User     @relation(fields: [user_id], references: [user_id])
+  comment            String?
+  is_manual_override Boolean  @default(false)
+  created_at         DateTime @default(now())
+}
