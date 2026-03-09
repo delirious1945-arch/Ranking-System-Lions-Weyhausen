@@ -3,12 +3,22 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 
 const prismaClientSingleton = () => {
-    // Using a more robust connection pool config for Supabase/PGBouncer
+    const connectionString = process.env.DATABASE_URL
+
+    if (!connectionString) {
+        console.error("DATABASE_URL is not defined in environment variables!")
+    }
+
+    // Using specialized config for Supabase on Vercel
     const pool = new pg.Pool({
-        connectionString: process.env.DATABASE_URL,
-        max: 20,
+        connectionString: connectionString,
+        max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
+        connectionTimeoutMillis: 10000,
+        // Supabase needs SSL for external connections
+        ssl: {
+            rejectUnauthorized: false
+        }
     })
 
     const adapter = new PrismaPg(pool)
