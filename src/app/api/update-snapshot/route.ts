@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import puppeteer, { Browser, Page } from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 import { prisma } from '@/lib/prisma';
 import {
     calculatePointsK1toK3,
@@ -74,7 +75,7 @@ interface ScrapedPlayer {
     legs_lost: number;
 }
 
-async function scrapeEvent(page: Page, eventId: number, config: EventConfig): Promise<ScrapedPlayer[]> {
+async function scrapeEvent(page: any, eventId: number, config: EventConfig): Promise<ScrapedPlayer[]> {
     const baseUrl = `${BASE}/${eventId}`;
 
     // 1. Stats page
@@ -156,15 +157,31 @@ async function scrapeEvent(page: Page, eventId: number, config: EventConfig): Pr
 
 // ─── Route Handler ────────────────────────────────────────────────
 export async function POST() {
-    let browser: Browser | undefined;
+    let browser: any | undefined;
 
     try {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        });
+        const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+
+        if (isProd) {
+            // Vercel / Production launch
+            const chromiumAny = chromium as any;
+            browser = await puppeteer.launch({
+                args: chromiumAny.args,
+                defaultViewport: chromiumAny.defaultViewport,
+                executablePath: await chromiumAny.executablePath(),
+                headless: chromiumAny.headless,
+            });
+        } else {
+            // Local fallback (requires full puppeteer installed)
+            const localPuppeteer = require('puppeteer');
+            browser = await localPuppeteer.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            });
+        }
+
         const page = await browser.newPage();
-        await page.setDefaultTimeout(30000);
+        await page.setDefaultTimeout(60000);
 
         // Scrape all events
         const allScrapedRaw: ScrapedPlayer[] = [];
