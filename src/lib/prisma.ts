@@ -6,16 +6,22 @@ const prismaClientSingleton = () => {
     const connectionString = process.env.DATABASE_URL
 
     if (!connectionString) {
-        console.error("DATABASE_URL is not defined in environment variables!")
+        console.error("CRITICAL: DATABASE_URL is undefined!");
+    } else {
+        // Safety check: Log the format without showing the password
+        try {
+            const url = new URL(connectionString);
+            console.log(`DB Connection: host=${url.hostname}, port=${url.port}, protocol=${url.protocol}`);
+        } catch (e) {
+            console.error("CRITICAL: DATABASE_URL is not a valid URL format!");
+        }
     }
 
-    // Using specialized config for Supabase on Vercel
     const pool = new pg.Pool({
         connectionString: connectionString,
-        max: 10,
+        max: 5,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
-        // Supabase needs SSL for external connections
         ssl: {
             rejectUnauthorized: false
         }
