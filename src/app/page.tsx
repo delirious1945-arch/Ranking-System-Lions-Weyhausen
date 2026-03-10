@@ -120,17 +120,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         {/* Content */}
         <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", height: "100%" }}>
 
-          {/* Top Text (Like "YOUR TEXT" in reference) */}
+          {/* Top Text */}
           <h1 style={{
             margin: "0 0 4px",
-            fontFamily: "Impact, 'Arial Narrow', sans-serif",
-            fontSize: "clamp(36px, 8vw, 64px)",
-            fontWeight: 800,
+            fontFamily: "var(--font-inter), Inter, sans-serif",
+            fontSize: "clamp(32px, 7vw, 56px)",
+            fontWeight: 900,
             letterSpacing: "0.02em",
             color: "#ffffff",
-            lineHeight: 1,
+            lineHeight: 1.1,
             textTransform: "uppercase",
-            transform: "scaleY(1.15)", // Creates the tall condensed look
             textShadow: "0 4px 20px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2)"
           }}>
             LIONS WEYHAUSEN
@@ -146,30 +145,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           }}>
             Dart Ranking Dashboard
           </p>
-
-          <div style={{ flexGrow: 1 }} /> {/* Spacer to push logo to center */}
-
-          {/* Centered Club Logo */}
-          <div style={{
-            position: "relative",
-            marginTop: 20,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-          }}>
-            <div style={{
-              position: "absolute",
-              width: 160, height: 160,
-              background: "radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, transparent 65%)",
-              filter: "blur(20px)",
-              zIndex: 0,
-            }} />
-            <img src="/logo.png" alt="Lions Weyhausen" style={{
-              width: 140, height: 140, objectFit: "contain",
-              position: "relative", zIndex: 1,
-              filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.6)) drop-shadow(0 0 15px rgba(255,255,255,0.15))",
-            }} />
-          </div>
 
         </div>
       </div>

@@ -108,14 +108,14 @@ export default function UserBadge() {
                 </button>
             </div>
 
-            {/* Admin User Management Modal */}
-            {isModalOpen && isAdmin && (
+            {/* Admin User Management Modal (moved to Portal to escape sticky header) */}
+            {isModalOpen && isAdmin && typeof document !== 'undefined' && require('react-dom').createPortal(
                 <div style={{
                     position: 'fixed',
                     inset: 0,
                     background: 'rgba(0,0,0,0.8)',
                     backdropFilter: 'blur(8px)',
-                    zIndex: 9999,
+                    zIndex: 99999,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -245,7 +245,8 @@ export default function UserBadge() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
