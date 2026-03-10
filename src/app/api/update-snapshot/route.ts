@@ -194,6 +194,22 @@ export async function POST() {
         await browser.close();
         browser = undefined;
 
+        // --- Fetch Manual Games ---
+        // Calculate current week ID
+        const now = new Date();
+        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+        const currentWeekId = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+
+        const manualGames = await prisma.manualGame.findMany({
+            where: { week_id: currentWeekId }
+        });
+
+        console.log(`[update-snapshot] Found ${manualGames.length} manual games for ${currentWeekId}`);
+
         console.log(`[update-snapshot] Total raw players collected: ${allScrapedRaw.length}`);
 
         // --- Aggregation Logic ---
@@ -255,6 +271,46 @@ export async function POST() {
                     weighted_avg_9: p.avg_9 * currentLegs,
                     weighted_avg_18: p.avg_18 * currentLegs,
                     total_legs_for_avg: currentLegs,
+                });
+            }
+        }
+
+        // --- Merge Manual Games ---
+        for (const mg of manualGames) {
+            const existing = aggregatedMap.get(mg.player_name);
+            const mgLegs = mg.legs_total;
+            const mgWins = (mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0);
+
+            if (existing) {
+                existing.wins += mgWins;
+                existing.legs_won += (mgLegs / 2); // Approximate won legs
+                existing.legs_lost += (mgLegs / 2);
+                existing.gespielte_single_spiele += 2;
+                existing.cnt_80 += mg.cnt_80;
+                existing.cnt_100 += mg.cnt_100;
+                existing.cnt_140 += mg.cnt_140;
+                existing.cnt_180 += mg.cnt_180;
+
+                existing.weighted_avg_total += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2));
+                existing.weighted_avg_9 += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)); // Simplified
+                existing.weighted_avg_18 += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2));
+                existing.total_legs_for_avg += mgLegs;
+            } else {
+                aggregatedMap.set(mg.player_name, {
+                    player_name: mg.player_name,
+                    verein: "Lions Weyhausen", // Default for manual
+                    wins: mgWins,
+                    legs_won: (mgLegs / 2),
+                    legs_lost: (mgLegs / 2),
+                    gespielte_single_spiele: 2,
+                    cnt_80: mg.cnt_80,
+                    cnt_100: mg.cnt_100,
+                    cnt_140: mg.cnt_140,
+                    cnt_180: mg.cnt_180,
+                    weighted_avg_total: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
+                    weighted_avg_9: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
+                    weighted_avg_18: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
+                    total_legs_for_avg: mgLegs,
                 });
             }
         }

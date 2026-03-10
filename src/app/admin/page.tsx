@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Upload, Download, ShieldAlert, CheckCircle, Database } from "lucide-react";
+import ManualGameForm from "@/components/ManualGameForm";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +168,11 @@ function AdminContent() {
                             Veto Aktivieren
                         </button>
                     </form>
+                </div>
+
+                {/* Manual Game Entry Module */}
+                <div className="md:col-span-2">
+                    <ManualGameForm />
                 </div>
             </div>
         </div>

@@ -37,12 +37,17 @@ export function calculatePointsK4(winRatePct: number): number {
 export function calculatePointsK5(avgHighPerLeg: number): number {
   if (avgHighPerLeg < 0) throw new Error("Invalid avg high per leg");
 
+  if (avgHighPerLeg <= 0.20) return 0;
   if (avgHighPerLeg <= 0.40) return 1;
-  if (avgHighPerLeg <= 0.80) return 2;
-  if (avgHighPerLeg <= 1.20) return 3;
-  if (avgHighPerLeg <= 1.60) return 4;
-  if (avgHighPerLeg <= 2.00) return 5;
-  return 5; // > 2.00 Cap
+  if (avgHighPerLeg <= 0.60) return 2;
+  if (avgHighPerLeg <= 0.80) return 3;
+  if (avgHighPerLeg <= 1.00) return 4;
+  if (avgHighPerLeg <= 1.20) return 5;
+  if (avgHighPerLeg <= 1.40) return 6;
+  if (avgHighPerLeg <= 1.60) return 7;
+  if (avgHighPerLeg <= 1.80) return 8;
+  if (avgHighPerLeg <= 2.00) return 9;
+  return 10; // > 2.00 Cap
 }
 
 export interface PlayerRawData {

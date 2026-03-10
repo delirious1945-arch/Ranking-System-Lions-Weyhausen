@@ -100,3 +100,20 @@ model ChangeLog {
   is_manual_override Boolean  @default(false)
   created_at         DateTime @default(now())
 }
+
+model ManualGame {
+  id              Int      @id @default(autoincrement())
+  player_name     String
+  date            DateTime @default(now())
+  game1_avg       Float
+  game1_win       Boolean
+  game2_avg       Float
+  game2_win       Boolean
+  cnt_80          Int
+  cnt_100         Int
+  cnt_140         Int
+  cnt_180         Int
+  legs_total      Int
+  created_at      DateTime @default(now())
+  week_id         String?  // Optional: to target specific weeks
+}
