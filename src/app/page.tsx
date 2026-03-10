@@ -82,79 +82,99 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {/* Hero Banner */}
       <div style={{
         position: "relative",
-        padding: "48px 32px",
+        padding: "60px 32px 48px",
         borderRadius: 24,
         background: "#0f172a",
-        border: "1px solid rgba(255, 255, 255, 0.05)",
+        border: "1px solid rgba(56, 189, 248, 0.2)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        minHeight: 220,
-        boxShadow: "0 20px 40px -10px rgba(0,0,0,0.5)",
+        alignItems: "center",
+        textAlign: "center",
+        minHeight: 280,
+        boxShadow: "0 20px 50px -10px rgba(0,0,0,0.6), inset 0 0 40px rgba(56, 189, 248, 0.1)",
       }}>
-        {/* Dynamic Logo Background */}
+        {/* Dynamic Neon Background */}
         <div style={{
           position: "absolute",
-          top: "-20%",
-          right: "-5%",
-          width: "60%",
-          height: "140%",
-          backgroundImage: "url(/logo.png)",
-          backgroundSize: "contain",
+          inset: 0,
+          backgroundImage: "url(/hero-bg.png)",
+          backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "right center",
-          opacity: 0.15,
-          filter: "grayscale(20%) contrast(120%) drop-shadow(0 0 40px rgba(0,0,0,0.5))",
+          backgroundPosition: "center 60%",
+          opacity: 0.6,
+          filter: "contrast(1.1) brightness(0.8)",
           pointerEvents: "none",
           zIndex: 0,
         }} />
 
-        {/* Gradient Overlay for depth */}
+        {/* Gradients for depth and readability */}
         <div style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(90deg, #0f172a 40%, transparent 100%)",
+          background: "linear-gradient(to top, rgba(11, 13, 17, 0.95) 0%, rgba(11, 13, 17, 0.4) 50%, rgba(11, 13, 17, 0.8) 100%)",
           zIndex: 1,
         }} />
 
         {/* Content */}
-        <div style={{ position: "relative", zIndex: 2, maxWidth: "70%" }}>
+        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {/* Centered Club Logo */}
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <div style={{
+              position: "absolute",
+              top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 140, height: 140,
+              background: "radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, transparent 60%)",
+              filter: "blur(15px)",
+              zIndex: 0,
+            }} />
+            <img src="/logo.png" alt="Lions Weyhausen" style={{
+              width: 110, height: 110, objectFit: "contain",
+              position: "relative", zIndex: 1,
+              filter: "drop-shadow(0 0 20px rgba(255,255,255,0.2))",
+            }} />
+          </div>
+
           <div style={{
             display: "inline-block",
-            padding: "4px 12px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            padding: "4px 14px",
+            background: "rgba(56, 189, 248, 0.15)",
+            border: "1px solid rgba(56, 189, 248, 0.3)",
             borderRadius: 20,
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: "#94a3b8",
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: "0.15em",
+            color: "#38bdf8",
             marginBottom: 16,
-            textTransform: "uppercase"
+            textTransform: "uppercase",
+            boxShadow: "0 0 20px rgba(56, 189, 248, 0.2)",
           }}>
             Saison 2025/26
           </div>
           <h1 style={{
             margin: "0 0 8px",
-            fontSize: "clamp(28px, 5vw, 42px)",
+            fontSize: "clamp(32px, 6vw, 48px)",
             fontWeight: 900,
-            letterSpacing: "-0.02em",
+            letterSpacing: "0.05em",
             color: "#ffffff",
             lineHeight: 1.1,
-            textShadow: "0 4px 20px rgba(0,0,0,0.5)"
+            textTransform: "uppercase",
+            textShadow: "0 0 20px rgba(255,255,255,0.3), 0 4px 10px rgba(0,0,0,0.8)"
           }}>
             LIONS WEYHAUSEN
           </h1>
           <p style={{
             margin: 0,
-            fontSize: "clamp(14px, 2vw, 18px)",
+            fontSize: "clamp(15px, 2.5vw, 18px)",
             color: "#cbd5e1",
-            fontWeight: 500,
-            letterSpacing: "0.02em"
+            fontWeight: 600,
+            letterSpacing: "0.03em",
+            textShadow: "0 2px 5px rgba(0,0,0,0.8)"
           }}>
             Dart Ranking Dashboard
-            {lastUpdated && <span style={{ color: "#64748b", marginLeft: 8 }}>· Aktualisiert: {lastUpdated}</span>}
+            {lastUpdated && <span style={{ color: "#94a3b8", marginLeft: 8 }}>· Aktualisiert: {lastUpdated}</span>}
           </p>
         </div>
       </div>
