@@ -114,6 +114,7 @@ model RankingConfig {
 model ManualGame {
   id              Int      @id @default(autoincrement())
   player_name     String
+  begegnung       String   @default("")
   date            DateTime @default(now())
   game1_avg       Float
   game1_avg_9     Float    @default(0)

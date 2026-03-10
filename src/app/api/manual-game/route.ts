@@ -17,6 +17,7 @@ export async function POST(request: Request) {
         const game = await prisma.manualGame.create({
             data: {
                 player_name: data.player_name,
+                begegnung: data.begegnung || '',
                 game1_avg: parseFloat(data.game1_avg),
                 game1_avg_9: parseFloat(data.game1_avg_9 || data.game1_avg),
                 game1_avg_18: parseFloat(data.game1_avg_18 || data.game1_avg),
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
                 cnt_180: parseInt(data.cnt_180),
                 legs_total: parseInt(data.legs_total),
                 week_id: weekId,
-                date: new Date()
+                date: data.date ? new Date(data.date) : new Date()
             }
         });
 

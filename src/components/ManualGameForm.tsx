@@ -16,6 +16,8 @@ export default function ManualGameForm() {
     const [success, setSuccess] = useState(false);
     const [formData, setFormData] = useState({
         player_name: ALLOWED_NAMES[0],
+        begegnung: '',
+        date: new Date().toISOString().split('T')[0],
         game1_avg: 40, game1_avg_9: 40, game1_avg_18: 40, game1_win: true,
         game2_avg: 40, game2_avg_9: 40, game2_avg_18: 40, game2_win: true,
         cnt_80: 0, cnt_100: 0, cnt_140: 0, cnt_180: 0, legs_total: 6,
@@ -154,6 +156,27 @@ export default function ManualGameForm() {
                             >
                                 {ALLOWED_NAMES.map(name => <option key={name} value={name} style={{ background: '#0f172a' }}>{name}</option>)}
                             </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                            <div>
+                                <label style={{ ...labelStyle, marginBottom: '6px' }}>📅 Datum</label>
+                                <input
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={e => set('date', e.target.value)}
+                                    style={inputGlassStyle}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ ...labelStyle, marginBottom: '6px' }}>⚔️ Begegnung</label>
+                                <input
+                                    type="text"
+                                    value={formData.begegnung}
+                                    onChange={e => set('begegnung', e.target.value)}
+                                    placeholder="z.B. vs. DC Wettmershagen A"
+                                    style={inputGlassStyle}
+                                />
+                            </div>
                         </div>
                     </div>
 

@@ -419,11 +419,23 @@ export async function POST() {
         // Sort descending by total_points
         ranked.sort((a, b) => b.total_points - a.total_points);
 
-        // Save snapshot — delete any existing one for same week first
+        // Save snapshot — upsert: keep only ONE snapshot per week
         const weekId = getWeekId();
-        // Removed: deleting old snapshot for same week. 
-        // We now keep multiple snapshots per week to allow "jumping back".
 
+        // Delete existing snapshots for this week (and their player values)
+        const existingSnapshots = await prisma.snapshot.findMany({
+            where: { week_id: weekId },
+            select: { snapshot_id: true }
+        });
+
+        for (const old of existingSnapshots) {
+            await prisma.snapshotPlayerValue.deleteMany({
+                where: { snapshot_id: old.snapshot_id }
+            });
+            await prisma.snapshot.delete({
+                where: { snapshot_id: old.snapshot_id }
+            });
+        }
 
         const snapshot = await prisma.snapshot.create({
             data: { week_id: weekId, timestamp: new Date() }

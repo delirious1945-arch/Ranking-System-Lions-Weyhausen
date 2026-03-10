@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import SnapshotSelector from "@/components/SnapshotSelector";
+import ManualGamesSection from "@/components/ManualGamesSection";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -249,6 +250,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   </table>
                 </div>
               </section>
+
+              {/* MANUAL GAMES TABLE */}
+              <ManualGamesSection />
             </>
           )}
 
