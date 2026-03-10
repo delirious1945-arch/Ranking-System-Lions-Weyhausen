@@ -59,20 +59,20 @@ export default async function PlayerHistoryPage(
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-sm text-slate-400">Avg Total (K1)</div>
-                            <div className="text-2xl font-black text-white">{latest.avg_total.toFixed(2)}</div>
+                            <div className="text-sm text-slate-400">∅ Average</div>
+                            <div className="text-2xl font-black text-white">{history[0].avg_total.toFixed(2)}</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-sm text-slate-400">Avg High/Leg (K5)</div>
-                            <div className="text-2xl font-black text-white">{latest.avg_high_per_leg.toFixed(2)}</div>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-sm text-slate-400">∅ 9 Darts</div>
+                            <div className="text-2xl font-black text-white">{history[0].avg_9.toFixed(2)}</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-sm text-slate-400">Siegquote (K4)</div>
-                            <div className="text-2xl font-black text-white">{latest.siegequote_pct.toFixed(1)}%</div>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-sm text-slate-400">Siegquote</div>
+                            <div className="text-2xl font-black text-white">{history[0].siegequote_pct.toFixed(1)}%</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-sm text-slate-400">Gespielte Einzel</div>
-                            <div className="text-2xl font-black text-white">{latest.gespielte_single_spiele}</div>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-sm text-slate-400">High/Leg</div>
+                            <div className="text-2xl font-black text-white">{history[0].avg_high_per_leg.toFixed(2)}</div>
                         </div>
                     </div>
                 </div>

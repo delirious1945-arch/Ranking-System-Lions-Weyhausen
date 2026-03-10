@@ -213,7 +213,7 @@ export default function ManualGameForm() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>K1 — AVERAGE TOTAL</label>
+                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>∅ AVERAGE TOTAL</label>
                                         <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: 800 }}>Darts ges.</span>
                                     </div>
                                     <input type="number" step="0.01" value={formData.game1_avg} onChange={e => set('game1_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
@@ -259,7 +259,7 @@ export default function ManualGameForm() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>K1 — AVERAGE TOTAL</label>
+                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>∅ AVERAGE TOTAL</label>
                                         <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 800 }}>Darts ges.</span>
                                     </div>
                                     <input type="number" step="0.01" value={formData.game2_avg} onChange={e => set('game2_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />

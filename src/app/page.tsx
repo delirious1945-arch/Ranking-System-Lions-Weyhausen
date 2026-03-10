@@ -47,11 +47,11 @@ async function getData(selectedWeek?: string, selectedId?: string) {
 
 const TABS = [
   { id: "overview", label: "Übersicht" },
-  { id: "k1", label: "K1" },
-  { id: "k2", label: "K2" },
-  { id: "k3", label: "K3" },
-  { id: "k4", label: "K4" },
-  { id: "k5", label: "K5" },
+  { id: "k1", label: "∅ Average" },
+  { id: "k2", label: "∅ 9 Darts" },
+  { id: "k3", label: "∅ 18 Darts" },
+  { id: "k4", label: "Siegquote" },
+  { id: "k5", label: "High/Leg" },
 ];
 
 function rankStyle(rank: number): { color: string; bg: string } {
@@ -260,11 +260,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                         <th style={{ width: 36 }}>#</th>
                         <th>Spieler</th>
                         <th style={{ textAlign: "right" }}>Pkt</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>K1</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>K2</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>K3</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>K4</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>K5</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ Avg</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 9</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 18</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>Wins</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>H/L</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>Avg</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>Sieg%</th>
                       </tr>
@@ -322,11 +322,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <section>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{
-                  activeTab === "k1" ? "K1: Avg Total" :
-                    activeTab === "k2" ? "K2: Avg 9-Dart" :
-                      activeTab === "k3" ? "K3: Avg 18-Dart" :
-                        activeTab === "k4" ? "K4: Siegquote" :
-                          "K5: High-Scores"
+                  activeTab === "k1" ? "∅ Average" :
+                    activeTab === "k2" ? "∅ 9 Darts" :
+                      activeTab === "k3" ? "∅ 18 Darts" :
+                        activeTab === "k4" ? "Siegquote" :
+                          "Hohe Scores pro Leg"
                 }</h3>
                 <div style={{ height: 1, flex: 1, background: "var(--border)" }} />
               </div>
@@ -395,24 +395,38 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               </span>
               <div style={{ height: 1, flex: 1, background: "var(--border)" }} />
             </div>
-            <div className="card" style={{ padding: "12px 14px" }}>
-              <div style={{ display: "flex", gap: 16, marginBottom: 10, fontSize: 11 }}>
-                <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-top5)", marginRight: 4, verticalAlign: "middle" }} /> Platz 1–5</span>
-                <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-6to10)", marginRight: 4, verticalAlign: "middle" }} /> Platz 6–10</span>
+            <div className="card" style={{ padding: "16px 20px" }}>
+              <div style={{ display: "flex", gap: 20, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-top5)", verticalAlign: "middle" }} />
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>Elite (Platz 1–5)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-6to10)", verticalAlign: "middle" }} />
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>Top 10 (Platz 6–10)</span>
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8, fontSize: 11, color: "var(--text-muted)" }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px 24px" }}>
                 {[
-                  { k: "K1 — Avg Total", desc: "<25=0, 25-29=1, 30-34=2, 35-39=3, 40-42=4, 42-44=5, 45-47=6, 47-49=7, 50-54=8, 55-59=9, ≥60=10" },
-                  { k: "K2 — Avg 9-Dart", desc: "<25=0, 25-29=1, 30-34=2, 35-39=3, 40-42=4, 42-44=5, 45-47=6, 47-49=7, 50-54=8, 55-59=9, ≥60=10" },
-                  { k: "K3 — Avg 18-Dart", desc: "<25=0, 25-29=1, 30-34=2, 35-39=3, 40-42=4, 42-44=5, 45-47=6, 47-49=7, 50-54=8, 55-59=9, ≥60=10" },
-                  { k: "K4 — Siegquote", desc: "<10%=0, 10-19=1, 20-29=2, 30-39=3, 40-49=4, 50-59=5, 60-69=6, 70-79=7, 80-84=8, 85-89=9, ≥90%=10" },
-                  { k: "K5 — High/Leg", desc: "<0.20=0, 0.4=1, 0.6=2, 0.8=3, 1.0=4, 1.2=5, 1.4=6, 1.6=7, 1.8=8, 2.0=9, >2.0=10" },
-                ].map(({ k, desc }) => (
-                  <div key={k}>
-                    <div style={{ fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>{k}</div>
-                    <div style={{ fontSize: 10, color: "var(--text-dim)", lineHeight: 1.4 }}>{desc}</div>
+                  { k: "∅ Average", desc: "Gesamtdurchschnitt pro Aufnahme", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
+                  { k: "∅ 9 Darts", desc: "Durchschnitt der ersten 9 Darts", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
+                  { k: "∅ 18 Darts", desc: "Durchschnitt der ersten 18 Darts", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
+                  { k: "Siegquote", desc: "Verhältnis gewonnene zu gesp. Einzel", logic: "<10%=0 Pkt ... ≥90%=10 Pkt" },
+                  { k: "Hohe Scores pro Leg", desc: "Schnitt von Würfen ≥80 pro Leg", logic: "<0.2=0 Pkt ... >2.0=10 Pkt" },
+                ].map(({ k, desc, logic }) => (
+                  <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ fontWeight: 800, color: "#38bdf8", fontSize: 12, letterSpacing: '0.02em' }}>{k}</div>
+                    <div style={{ fontSize: 11, color: "var(--text)", fontWeight: 500 }}>{desc}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', padding: '4px 8px', borderRadius: 4, marginTop: 4 }}>
+                      {logic}
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)", fontSize: 10, color: "var(--text-muted)", fontStyle: 'italic' }}>
+                💡 Die Gesamtpunkte berechnen sich aus dem gewichteten Durchschnitt dieser 5 Kategorien.
               </div>
             </div>
           </section>
