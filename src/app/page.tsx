@@ -51,7 +51,7 @@ const TABS = [
   { id: "k2", label: "∅ 9 Darts" },
   { id: "k3", label: "∅ 18 Darts" },
   { id: "k4", label: "Siegquote" },
-  { id: "k5", label: "High/Leg" },
+  { id: "k5", label: "HighScore/Leg" },
 ];
 
 function rankStyle(rank: number): { color: string; bg: string } {
@@ -264,7 +264,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                         <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 9</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 18</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>Wins</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>H/L</th>
+                        <th className="hide-mobile" style={{ textAlign: "right" }}>H S/L</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>Avg</th>
                         <th className="hide-mobile" style={{ textAlign: "right" }}>Sieg%</th>
                       </tr>
@@ -445,7 +445,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     ]
                   },
                   {
-                    title: "Hohe Scores pro Leg (H/L)",
+                    title: "Hohe Scores pro Leg (HighScore/Leg)",
                     desc: "Wurf-Zähler ≥ 80 pro gespieltem Leg",
                     steps: [
                       { range: "0.00 – 0.20", pts: 0 },

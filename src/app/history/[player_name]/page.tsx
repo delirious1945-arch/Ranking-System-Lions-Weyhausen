@@ -71,7 +71,7 @@ export default async function PlayerHistoryPage(
                             <div className="text-2xl font-black text-white">{history[0].siegequote_pct.toFixed(1)}%</div>
                         </div>
                         <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                            <div className="text-sm text-slate-400">High/Leg</div>
+                            <div className="text-sm text-slate-400">HighScore/Leg</div>
                             <div className="text-2xl font-black text-white">{history[0].avg_high_per_leg.toFixed(2)}</div>
                         </div>
                     </div>
