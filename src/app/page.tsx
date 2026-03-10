@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import SnapshotSelector from "@/components/SnapshotSelector";
-import ManualGamesSection from "@/components/ManualGamesSection";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -80,15 +79,44 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-      {/* Header */}
-      <div style={{ padding: "0 2px" }}>
-        <h1 style={{ margin: 0, fontSize: "clamp(18px, 5vw, 22px)", fontWeight: 800, letterSpacing: "-0.03em" }}>
-          Ranking Dashboard
-        </h1>
-        <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
-          Lions Weyhausen — Saison 2025/26
-          {lastUpdated && <span style={{ marginLeft: 8, color: "var(--text-dim)" }}>· {lastUpdated}</span>}
-        </p>
+      {/* Hero Banner */}
+      <div style={{
+        position: "relative",
+        padding: "32px 24px 28px",
+        borderRadius: 16,
+        background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 50%, rgba(15, 23, 42, 0.9) 100%)",
+        border: "1px solid rgba(56, 189, 248, 0.1)",
+        overflow: "hidden",
+        textAlign: "center",
+      }}>
+        {/* Radial glow behind logo */}
+        <div style={{
+          position: "absolute",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 300, height: 300,
+          background: "radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        {/* Large logo */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <img src="/logo.png" alt="Lions Weyhausen" style={{
+            width: 90, height: 90, objectFit: "contain",
+            filter: "drop-shadow(0 0 30px rgba(56, 189, 248, 0.3))",
+            marginBottom: 12,
+          }} />
+          <h1 style={{
+            margin: "0 0 4px", fontSize: 22, fontWeight: 900,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "#f8fafc",
+          }}>
+            Lions Weyhausen
+          </h1>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--text-dim)", letterSpacing: "0.04em" }}>
+            Dart Ranking · Saison 2025/26
+            {lastUpdated && <span style={{ marginLeft: 8 }}>· {lastUpdated}</span>}
+          </p>
+        </div>
       </div>
 
       {/* Snapshot Selector */}
@@ -251,8 +279,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 </div>
               </section>
 
-              {/* MANUAL GAMES TABLE */}
-              <ManualGamesSection />
             </>
           )}
 

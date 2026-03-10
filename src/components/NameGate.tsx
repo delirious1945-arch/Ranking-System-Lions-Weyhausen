@@ -24,7 +24,7 @@ const ALLOWED_NAMES = [
 ];
 
 const ADMIN_NAME = 'Sebastian Kirste';
-const ADMIN_PASSWORD = 'Lions2026!';
+const ADMIN_PASSWORD = 'Luca030915!';
 const STORAGE_KEY = 'lions-auth-name';
 
 function normalize(s: string) {
