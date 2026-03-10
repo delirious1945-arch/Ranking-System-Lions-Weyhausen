@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Target, Trophy, Info, Save, User as UserIcon, List, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Target, Trophy, Info, Save, User as UserIcon, Zap, CheckCircle2, ChevronRight, BarChart3, Clock } from 'lucide-react';
 
 const ALLOWED_NAMES = [
     'Sebastian Kirste', 'Jens Goltermann', 'Erik Schremmer', 'Timo Feuerhahn',
@@ -33,174 +33,220 @@ export default function ManualGameForm() {
             });
             if (res.ok) {
                 setSuccess(true);
+                // Reset counters but keep player and averages for convenience if multi-entering
                 setFormData(prev => ({ ...prev, cnt_80: 0, cnt_100: 0, cnt_140: 0, cnt_180: 0 }));
                 setTimeout(() => setSuccess(false), 3000);
             } else {
                 alert('Fehler beim Speichern.');
             }
-        } catch { alert('Netzwerkfehler'); }
-        finally { setLoading(false); }
+        } catch {
+            alert('Netzwerkfehler');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const set = (key: string, val: any) => setFormData(prev => ({ ...prev, [key]: val }));
 
-    // ── Styles (Glassmorphism & Glowing Blue) ───────────────────────
+    // ── Styles (Ultra Glassmorphism & Cyber Glow) ───────────────────────
     const glassStyle: React.CSSProperties = {
-        background: 'rgba(15, 23, 42, 0.4)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(56, 189, 248, 0.2)',
-        borderRadius: '24px',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        color: '#e2e8f0',
+        background: 'rgba(15, 23, 42, 0.45)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '32px',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.05)',
+        color: '#f8fafc',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '40px',
+    };
+
+    const glowBase: React.CSSProperties = {
+        position: 'absolute',
+        borderRadius: '50%',
+        filter: 'blur(80px)',
+        zIndex: 0,
+        pointerEvents: 'none',
     };
 
     const inputGlassStyle: React.CSSProperties = {
-        background: 'rgba(30, 41, 59, 0.5)',
-        border: '1px solid rgba(56, 189, 248, 0.1)',
-        borderRadius: '12px',
-        padding: '12px 16px',
-        color: '#f8fafc',
-        fontSize: '14px',
+        background: 'rgba(15, 23, 42, 0.6)',
+        border: '1px solid rgba(56, 189, 248, 0.2)',
+        borderRadius: '16px',
+        padding: '14px 20px',
+        color: '#fff',
+        fontSize: '15px',
         outline: 'none',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
     };
 
     const cardStyle: React.CSSProperties = {
-        background: 'rgba(30, 41, 59, 0.3)',
-        border: '1px solid rgba(56, 189, 248, 0.1)',
-        borderRadius: '16px',
-        padding: '20px',
-        transition: 'transform 0.2s',
+        background: 'rgba(30, 41, 59, 0.4)',
+        border: '1px solid rgba(56, 189, 248, 0.15)',
+        borderRadius: '24px',
+        padding: '24px',
+        position: 'relative',
+        zIndex: 1,
+        transition: 'all 0.3s ease',
+    };
+
+    const labelStyle: React.CSSProperties = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '11px',
+        fontWeight: 800,
+        color: '#38bdf8',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: '10px',
+        opacity: 0.9
     };
 
     return (
-        <div style={{ ...glassStyle, padding: '32px', maxWidth: '800px', margin: '0 auto', position: 'relative', overflow: 'hidden' }}>
-            {/* Decorative Glow Elements */}
-            <div style={{
-                position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px',
-                background: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%)',
-                zIndex: 0, pointerEvents: 'none'
-            }} />
-            <div style={{
-                position: 'absolute', bottom: '-80px', left: '-80px', width: '250px', height: '250px',
-                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
-                zIndex: 0, pointerEvents: 'none'
-            }} />
+        <div style={glassStyle}>
+            {/* Dynamic Background Glows */}
+            <div style={{ ...glowBase, top: '-50px', right: '-50px', width: '250px', height: '250px', background: 'rgba(56, 189, 248, 0.2)' }} />
+            <div style={{ ...glowBase, bottom: '-50px', left: '-50px', width: '200px', height: '200px', background: 'rgba(139, 92, 246, 0.15)' }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <div style={{ background: 'linear-gradient(135deg, #38bdf8, #818cf8)', padding: '10px', borderRadius: '14px', boxShadow: '0 0 20px rgba(56, 189, 248, 0.4)' }}>
-                        <Target size={24} color="white" strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <h2 style={{ fontSize: '24px', fontWeight: 800, margin: 0, background: 'linear-gradient(to right, #f8fafc, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                            Manuelle Spieleingabe
-                        </h2>
-                        <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>Offline-Statistiken für die aktuelle Woche erfassen</p>
+                {/* Header */}
+                <div style={{ marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+                        <div style={{
+                            background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                            padding: '12px',
+                            borderRadius: '18px',
+                            boxShadow: '0 0 25px rgba(14, 165, 233, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Target size={28} color="white" />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '28px', fontWeight: 900, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                Offline-Gaming Terminal
+                            </h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>
+                                <Clock size={12} /> <span>Wöchentliche manuelle Datenerfassung</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                    {/* Player Name */}
+                    {/* Player Identity Section */}
                     <div style={cardStyle}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
-                            <UserIcon size={14} /> Spieler auswählen
-                        </label>
-                        <select
-                            value={formData.player_name}
-                            onChange={e => set('player_name', e.target.value)}
-                            style={inputGlassStyle}
-                            onFocus={(e) => {
-                                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
-                                e.currentTarget.style.boxShadow = '0 0 15px rgba(56, 189, 248, 0.2)';
-                            }}
-                            onBlur={(e) => {
-                                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.1)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            {ALLOWED_NAMES.map(name => <option key={name} value={name}>{name}</option>)}
-                        </select>
+                        <label style={labelStyle}><UserIcon size={14} /> Spieler-Identität</label>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                value={formData.player_name}
+                                onChange={e => set('player_name', e.target.value)}
+                                style={inputGlassStyle}
+                                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)'}
+                                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.2)'}
+                            >
+                                {ALLOWED_NAMES.map(name => <option key={name} value={name} style={{ background: '#0f172a' }}>{name}</option>)}
+                            </select>
+                        </div>
                     </div>
 
-                    {/* Games Split */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {/* Dual Game Analysis Section */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
 
-                        {/* Game 1 */}
-                        <div style={cardStyle}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: '#fbbf24' }}>
-                                    <Trophy size={16} /> Spiel 1
-                                </span>
+                        {/* Game 1 Module */}
+                        <div style={{ ...cardStyle, borderTop: '4px solid #fbbf24' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ background: 'rgba(251, 191, 36, 0.1)', padding: '6px', borderRadius: '8px' }}>
+                                        <Trophy size={18} color="#fbbf24" strokeWidth={2.5} />
+                                    </div>
+                                    <span style={{ fontSize: '16px', fontWeight: 800, color: '#fbbf24' }}>Primär-Match</span>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => set('game1_win', !formData.game1_win)}
                                     style={{
-                                        padding: '6px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                                        border: '1px solid', transition: 'all 0.3s',
-                                        borderColor: formData.game1_win ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                                        background: formData.game1_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                        padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: 900, cursor: 'pointer',
+                                        border: '1px solid', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        borderColor: formData.game1_win ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+                                        background: formData.game1_win ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                                         color: formData.game1_win ? '#4ade80' : '#f87171',
-                                        boxShadow: formData.game1_win ? '0 0 15px rgba(34, 197, 94, 0.1)' : '0 0 15px rgba(239, 68, 68, 0.1)'
+                                        boxShadow: formData.game1_win ? '0 0 20px rgba(34, 197, 94, 0.2)' : '0 0 20px rgba(239, 68, 68, 0.2)',
                                     }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    {formData.game1_win ? '✓ SIEG' : '✗ LOSS'}
+                                    {formData.game1_win ? 'WINNER' : 'DEFEAT'}
                                 </button>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K1: Average Total</label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>K1 — AVERAGE TOTAL</label>
+                                        <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: 800 }}>Darts ges.</span>
+                                    </div>
                                     <input type="number" step="0.01" value={formData.game1_avg} onChange={e => set('game1_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K2: Avg 9-Dart</label>
+                                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, marginBottom: '6px', display: 'block' }}>K2 — AVG 9-DART</label>
                                     <input type="number" step="0.01" value={formData.game1_avg_9} onChange={e => set('game1_avg_9', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K3: Avg 18-Dart</label>
+                                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, marginBottom: '6px', display: 'block' }}>K3 — AVG 18-DART</label>
                                     <input type="number" step="0.01" value={formData.game1_avg_18} onChange={e => set('game1_avg_18', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Game 2 */}
-                        <div style={cardStyle}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: '#38bdf8' }}>
-                                    <Trophy size={16} /> Spiel 2
-                                </span>
+                        {/* Game 2 Module */}
+                        <div style={{ ...cardStyle, borderTop: '4px solid #38bdf8' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '6px', borderRadius: '8px' }}>
+                                        <Trophy size={18} color="#38bdf8" strokeWidth={2.5} />
+                                    </div>
+                                    <span style={{ fontSize: '16px', fontWeight: 800, color: '#38bdf8' }}>Sekundär-Match</span>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => set('game2_win', !formData.game2_win)}
                                     style={{
-                                        padding: '6px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                                        border: '1px solid', transition: 'all 0.3s',
-                                        borderColor: formData.game2_win ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                                        background: formData.game2_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                        padding: '8px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: 900, cursor: 'pointer',
+                                        border: '1px solid', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        borderColor: formData.game2_win ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+                                        background: formData.game2_win ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                                         color: formData.game2_win ? '#4ade80' : '#f87171',
-                                        boxShadow: formData.game2_win ? '0 0 15px rgba(34, 197, 94, 0.1)' : '0 0 15px rgba(239, 68, 68, 0.1)'
+                                        boxShadow: formData.game2_win ? '0 0 20px rgba(34, 197, 94, 0.2)' : '0 0 20px rgba(239, 68, 68, 0.2)',
                                     }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    {formData.game2_win ? '✓ SIEG' : '✗ LOSS'}
+                                    {formData.game2_win ? 'WINNER' : 'DEFEAT'}
                                 </button>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K1: Average Total</label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                        <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>K1 — AVERAGE TOTAL</label>
+                                        <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 800 }}>Darts ges.</span>
+                                    </div>
                                     <input type="number" step="0.01" value={formData.game2_avg} onChange={e => set('game2_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K2: Avg 9-Dart</label>
+                                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, marginBottom: '6px', display: 'block' }}>K2 — AVG 9-DART</label>
                                     <input type="number" step="0.01" value={formData.game2_avg_9} onChange={e => set('game2_avg_9', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px', display: 'block' }}>K3: Avg 18-Dart</label>
+                                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, marginBottom: '6px', display: 'block' }}>K3 — AVG 18-DART</label>
                                     <input type="number" step="0.01" value={formData.game2_avg_18} onChange={e => set('game2_avg_18', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                 </div>
                             </div>
@@ -208,86 +254,133 @@ export default function ManualGameForm() {
 
                     </div>
 
-                    {/* High Scores & Legs */}
-                    <div style={cardStyle}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: '#a78bfa', marginBottom: '20px' }}>
-                            <Zap size={16} /> Details & High-Scores
+                    {/* Stats Aggregation Module */}
+                    <div style={{ ...cardStyle, background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(30, 41, 59, 0.4))' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                            <div style={{ background: 'rgba(167, 139, 250, 0.15)', padding: '8px', borderRadius: '10px' }}>
+                                <BarChart3 size={18} color="#a78bfa" />
+                            </div>
+                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#a78bfa' }}>High-Score Aggregation (K5)</span>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
                             <div>
-                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'block', fontWeight: 700 }}>Legs Ges.</label>
-                                <input type="number" value={formData.legs_total} onChange={e => set('legs_total', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center' }} />
+                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'block', fontWeight: 800, textAlign: 'center' }}>LEGS TOTAL</label>
+                                <input type="number" value={formData.legs_total} onChange={e => set('legs_total', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center', color: '#a78bfa', fontWeight: 700 }} />
                             </div>
-                            <div>
-                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'block', fontWeight: 700 }}>80+</label>
-                                <input type="number" value={formData.cnt_80} onChange={e => set('cnt_80', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center' }} />
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'block', fontWeight: 700 }}>100+</label>
-                                <input type="number" value={formData.cnt_100} onChange={e => set('cnt_100', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center' }} />
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'block', fontWeight: 700 }}>140+</label>
-                                <input type="number" value={formData.cnt_140} onChange={e => set('cnt_140', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center' }} />
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'block', fontWeight: 700 }}>180</label>
-                                <input type="number" value={formData.cnt_180} onChange={e => set('cnt_180', parseInt(e.target.value) || 0)} style={{ ...inputGlassStyle, textAlign: 'center' }} />
-                            </div>
+                            {['80+', '100+', '140+', '180'].map((label, i) => {
+                                const keys = ['cnt_80', 'cnt_100', 'cnt_140', 'cnt_180'] as const;
+                                const key = keys[i];
+                                return (
+                                    <div key={label}>
+                                        <label style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'block', fontWeight: 800, textAlign: 'center' }}>{label}</label>
+                                        <input
+                                            type="number"
+                                            value={formData[key]}
+                                            onChange={e => set(key, parseInt(e.target.value) || 0)}
+                                            style={{ ...inputGlassStyle, textAlign: 'center', borderStyle: 'dashed' }}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Submit Button */}
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            padding: '16px',
-                            borderRadius: '16px',
-                            border: 'none',
-                            background: success ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: 800,
-                            cursor: loading ? 'wait' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px',
-                            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                            boxShadow: success ? '0 0 30px rgba(16, 185, 129, 0.4)' : '0 0 30px rgba(56, 189, 248, 0.3)',
-                            marginTop: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!loading) {
-                                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                                e.currentTarget.style.boxShadow = success ? '0 0 40px rgba(16, 185, 129, 0.5)' : '0 0 40px rgba(56, 189, 248, 0.5)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!loading) {
-                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                e.currentTarget.style.boxShadow = success ? '0 0 30px rgba(16, 185, 129, 0.4)' : '0 0 30px rgba(56, 189, 248, 0.3)';
-                            }
-                        }}
-                    >
-                        {loading ? (
-                            <>Speichere...</>
-                        ) : success ? (
-                            <><CheckCircle2 size={20} /> Erfolgreich gespeichert!</>
-                        ) : (
-                            <><Save size={20} /> Spielcharakter-Stats Finalisieren</>
-                        )}
-                    </button>
+                    {/* Submit Action Block */}
+                    <div style={{ marginTop: '12px' }}>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                width: '100%',
+                                padding: '20px',
+                                borderRadius: '20px',
+                                border: 'none',
+                                background: success
+                                    ? 'linear-gradient(135deg, #059669, #10b981)'
+                                    : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                                color: 'white',
+                                fontSize: '17px',
+                                fontWeight: 900,
+                                cursor: loading ? 'wait' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                transition: 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: success
+                                    ? '0 10px 40px rgba(16, 185, 129, 0.4)'
+                                    : '0 15px 40px rgba(14, 165, 233, 0.3)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+                                    e.currentTarget.style.boxShadow = success
+                                        ? '0 15px 50px rgba(16, 185, 129, 0.5)'
+                                        : '0 20px 50px rgba(14, 165, 233, 0.5)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    e.currentTarget.style.boxShadow = success
+                                        ? '0 10px 40px rgba(16, 185, 129, 0.4)'
+                                        : '0 15px 40px rgba(14, 165, 233, 0.3)';
+                                }
+                            }}
+                        >
+                            {loading ? (
+                                <>⏳ ÜBERMİTTELN...</>
+                            ) : success ? (
+                                <><CheckCircle2 size={22} /> DATEN ERFOLGREİCH GESPEİCHERT</>
+                            ) : (
+                                <><Save size={22} /> STATS İN RANKİNG EİNSPEİSEN</>
+                            )}
+                        </button>
 
-                    {success && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '13px', justifyContent: 'center', fontWeight: 600 }}>
-                            <Info size={14} /> Die Daten werden beim nächsten Snapshot-Update berücksichtigt.
-                        </div>
-                    )}
+                        {success && (
+                            <div style={{
+                                marginTop: '16px',
+                                textAlign: 'center',
+                                color: '#10b981',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                animation: 'pulse 2s infinite'
+                            }}>
+                                <Info size={16} /> <span>Änderungen werden beim nächsten automatischen Update aktiv.</span>
+                            </div>
+                        )}
+                    </div>
 
                 </form>
+            </div>
+
+            {/* Footer Info */}
+            <div style={{
+                marginTop: '40px',
+                paddingTop: '24px',
+                borderTop: '1px solid rgba(56, 189, 248, 0.1)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                opacity: 0.6,
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#94a3b8'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Zap size={12} color="#38bdf8" /> POWERED BY LIONS WEYHAUSEN ENGINE
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span>v2.0 FULL GLOW</span>
+                    <span>ADMIN TERMINAL</span>
+                </div>
             </div>
         </div>
     );
