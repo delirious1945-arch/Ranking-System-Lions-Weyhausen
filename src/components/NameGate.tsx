@@ -23,6 +23,8 @@ const ALLOWED_NAMES = [
     'Uwe Kohnert',
 ];
 
+const ADMIN_NAME = 'Sebastian Kirste';
+const ADMIN_PASSWORD = 'Lions2026!';
 const STORAGE_KEY = 'lions-auth-name';
 
 function normalize(s: string) {
@@ -33,6 +35,8 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
     const [authed, setAuthed] = useState<boolean | null>(null);
     const [vorname, setVorname] = useState('');
     const [nachname, setNachname] = useState('');
+    const [password, setPassword] = useState('');
+    const [needsPassword, setNeedsPassword] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -47,14 +51,29 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
         const fullName = `${vorname.trim()} ${nachname.trim()}`;
         const match = ALLOWED_NAMES.find(n => normalize(n) === normalize(fullName));
-        if (match) {
-            localStorage.setItem(STORAGE_KEY, match);
-            setAuthed(true);
-        } else {
+
+        if (!match) {
             setError('Name nicht gefunden. Bitte überprüfe deine Eingabe.');
+            return;
         }
+
+        // Admin needs password
+        if (match === ADMIN_NAME) {
+            if (!needsPassword) {
+                setNeedsPassword(true);
+                return;
+            }
+            if (password !== ADMIN_PASSWORD) {
+                setError('Falsches Passwort.');
+                return;
+            }
+        }
+
+        localStorage.setItem(STORAGE_KEY, match);
+        setAuthed(true);
     };
 
     if (authed === null) return null;
@@ -70,7 +89,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
         borderRadius: 10,
         outline: 'none',
         boxSizing: 'border-box',
-        transition: 'border-color 0.15s',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
     };
 
     return (
@@ -81,15 +100,48 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
             justifyContent: 'center',
             padding: 24,
             background: '#0b0d11',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
-            <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+            {/* Giant background logo watermark */}
+            <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '60vmin',
+                height: '60vmin',
+                backgroundImage: 'url(/logo.png)',
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                opacity: 0.04,
+                pointerEvents: 'none',
+            }} />
+
+            <div style={{ width: '100%', maxWidth: 400, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                 {/* Logo */}
                 <div style={{ marginBottom: 32 }}>
-                    <img
-                        src="/logo.png"
-                        alt="Lions Weyhausen"
-                        style={{ width: 80, height: 80, objectFit: 'contain', margin: '0 auto', display: 'block', opacity: 0.9 }}
-                    />
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <div style={{
+                            position: 'absolute',
+                            width: 120, height: 120,
+                            borderRadius: '50%',
+                            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%)',
+                            top: '50%', left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            filter: 'blur(20px)',
+                        }} />
+                        <img
+                            src="/logo.png"
+                            alt="Lions Weyhausen"
+                            style={{
+                                width: 80, height: 80, objectFit: 'contain',
+                                position: 'relative', zIndex: 1,
+                                filter: 'drop-shadow(0 0 20px rgba(56, 189, 248, 0.25))',
+                            }}
+                        />
+                    </div>
                     <h1 style={{ margin: '20px 0 8px', fontSize: 24, fontWeight: 800, color: '#f0f2f5', letterSpacing: '-0.03em' }}>
                         Lions Weyhausen
                     </h1>
@@ -100,7 +152,8 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} style={{
-                    background: '#13161e',
+                    background: 'rgba(19, 22, 30, 0.8)',
+                    backdropFilter: 'blur(12px)',
                     border: '1px solid rgba(255,255,255,0.06)',
                     borderRadius: 16,
                     padding: 28,
@@ -113,7 +166,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                             <input
                                 type="text"
                                 value={vorname}
-                                onChange={e => { setVorname(e.target.value); setError(''); }}
+                                onChange={e => { setVorname(e.target.value); setError(''); setNeedsPassword(false); }}
                                 placeholder="Vorname"
                                 autoComplete="given-name"
                                 autoFocus
@@ -127,13 +180,37 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                             <input
                                 type="text"
                                 value={nachname}
-                                onChange={e => { setNachname(e.target.value); setError(''); }}
+                                onChange={e => { setNachname(e.target.value); setError(''); setNeedsPassword(false); }}
                                 placeholder="Nachname"
                                 autoComplete="family-name"
                                 style={inputStyle}
                             />
                         </div>
                     </div>
+
+                    {/* Password field - slides in for admin */}
+                    {needsPassword && (
+                        <div style={{ marginBottom: 16, animation: 'fadeIn 0.3s ease-out' }}>
+                            <label style={{ display: 'block', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#38bdf8', marginBottom: 6 }}>
+                                🔒 Admin-Passwort
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={e => { setPassword(e.target.value); setError(''); }}
+                                placeholder="Passwort eingeben"
+                                autoFocus
+                                style={{
+                                    ...inputStyle,
+                                    borderColor: 'rgba(56, 189, 248, 0.3)',
+                                    boxShadow: '0 0 15px rgba(56, 189, 248, 0.08)',
+                                }}
+                            />
+                            <p style={{ fontSize: 11, color: '#64748b', margin: '6px 0 0', textAlign: 'left' }}>
+                                Admin-Zugang erfordert ein Passwort.
+                            </p>
+                        </div>
+                    )}
 
                     {error && (
                         <p style={{ color: '#f85149', fontSize: 13, margin: '0 0 12px', textAlign: 'left' }}>
@@ -149,17 +226,27 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                             fontSize: 15,
                             fontWeight: 700,
                             color: '#fff',
-                            background: '#58a6ff',
+                            background: needsPassword
+                                ? 'linear-gradient(135deg, #0ea5e9, #6366f1)'
+                                : '#58a6ff',
                             border: 'none',
                             borderRadius: 10,
                             cursor: 'pointer',
-                            transition: 'background 0.15s',
+                            transition: 'all 0.2s',
+                            boxShadow: needsPassword ? '0 0 25px rgba(56, 189, 248, 0.3)' : 'none',
                         }}
                     >
-                        Einloggen
+                        {needsPassword ? '🔐 Als Admin Einloggen' : 'Einloggen'}
                     </button>
                 </form>
             </div>
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }

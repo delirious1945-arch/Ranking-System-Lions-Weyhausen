@@ -27,7 +27,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
-      <body style={{ margin: 0, minHeight: "100vh", backgroundColor: "#0b0d11", color: "#f0f2f5", fontFamily: "Inter, sans-serif" }}>
+      <body style={{ margin: 0, minHeight: "100vh", backgroundColor: "#0b0d11", color: "#f0f2f5", fontFamily: "Inter, sans-serif", position: "relative", overflow: "auto" }}>
+
+        {/* Giant Watermark Logo — elegant background presence */}
+        <div style={{
+          position: "fixed",
+          bottom: "-8%",
+          right: "-5%",
+          width: "45vmin",
+          height: "45vmin",
+          backgroundImage: "url(/logo.png)",
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          opacity: 0.025,
+          pointerEvents: "none",
+          zIndex: 0,
+        }} />
 
         <NameGate>
           {/* Top Navigation */}
@@ -51,27 +67,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Logo + Nav */}
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
-                    <div style={{
-                      position: "absolute",
-                      width: 44, height: 44,
-                      borderRadius: "50%",
-                      background: "rgba(56, 189, 248, 0.08)",
-                      filter: "blur(8px)",
-                    }} />
-                    <img src="/logo.png" alt="Lions Weyhausen Logo" style={{
-                      width: 36, height: 36, objectFit: "contain", position: "relative", zIndex: 1,
-                      filter: "drop-shadow(0 0 6px rgba(56, 189, 248, 0.3))",
-                    }} />
+                  <img src="/logo.png" alt="Lions" style={{
+                    width: 32, height: 32, objectFit: "contain",
+                    filter: "drop-shadow(0 0 8px rgba(56, 189, 248, 0.3))",
+                  }} />
+                  <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+                    <span style={{ fontWeight: 900, fontSize: 15, color: "var(--text)", letterSpacing: "-0.02em" }}>
+                      DartRanking
+                    </span>
+                    <span className="hide-mobile" style={{ fontSize: 9, color: "var(--text-dim)", fontWeight: 500, letterSpacing: "0.04em", marginTop: 1 }}>
+                      LIONS WEYHAUSEN
+                    </span>
                   </div>
-                  <span className="hide-mobile" style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", letterSpacing: "-0.02em" }}>
-                    DartRanking
-                  </span>
                 </Link>
 
                 <NavLinks />
@@ -89,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
 
           {/* Main */}
-          <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px" }}>
+          <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px", position: "relative", zIndex: 1 }}>
             {children}
           </main>
         </NameGate>
