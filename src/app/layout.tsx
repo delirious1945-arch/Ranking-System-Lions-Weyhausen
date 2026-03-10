@@ -3,6 +3,7 @@ import Link from "next/link";
 import UpdateSnapshotButton from "@/components/UpdateSnapshotButton";
 import NavLinks from "@/components/NavLinks";
 import NameGate from "@/components/NameGate";
+import UserBadge from "@/components/UserBadge";
 
 function getWeekId(): string {
   const now = new Date();
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Right side */}
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <UserBadge />
                 <div className="hide-mobile" style={{ fontSize: 11, color: "var(--text-muted)" }}>
                   KW <code style={{ fontFamily: "monospace", color: "var(--text)", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4, fontSize: 11 }}>{weekId}</code>
                 </div>

@@ -35,8 +35,8 @@ export default function PlayerManualGames({ playerName }: Props) {
     const [deleting, setDeleting] = useState<number | null>(null);
 
     useEffect(() => {
-        // Check admin status from localStorage
-        const authName = localStorage.getItem('lions-auth');
+        // Check admin status - key must match NameGate's STORAGE_KEY
+        const authName = localStorage.getItem('lions-auth-name');
         if (authName === 'Sebastian Kirste') {
             setIsAdmin(true);
         }
