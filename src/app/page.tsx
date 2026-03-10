@@ -82,7 +82,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {/* Hero Banner */}
       <div style={{
         position: "relative",
-        padding: "30px 20px 40px",
+        padding: "30px 16px 40px",
         borderRadius: 24,
         background: "#080b12",
         border: "1px solid rgba(56, 189, 248, 0.3)",
@@ -92,8 +92,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         alignItems: "center",
         justifyContent: "flex-start",
         textAlign: "center",
-        minHeight: 340,
+        minHeight: 300,
         boxShadow: "0 20px 50px -10px rgba(0,0,0,0.8), inset 0 0 60px rgba(236, 72, 153, 0.15)",
+        width: "100%",
+        maxWidth: "100%",
       }}>
         {/* Dynamic Neon Background */}
         <div style={{
@@ -118,30 +120,34 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         }} />
 
         {/* Content */}
-        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", height: "100%" }}>
+        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", height: "100%", maxWidth: "100%" }}>
 
           {/* Top Text */}
           <h1 style={{
             margin: "0 0 4px",
             fontFamily: "var(--font-inter), Inter, sans-serif",
-            fontSize: "clamp(32px, 7vw, 56px)",
+            fontSize: "clamp(24px, 8vw, 56px)",
             fontWeight: 900,
             letterSpacing: "0.02em",
             color: "#ffffff",
             lineHeight: 1.1,
             textTransform: "uppercase",
-            textShadow: "0 4px 20px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2)"
+            textShadow: "0 4px 20px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2)",
+            wordBreak: "break-word",
+            maxWidth: "100%"
           }}>
             LIONS WEYHAUSEN
           </h1>
           <p style={{
             margin: "4px 0 0",
-            fontSize: "14px",
+            fontSize: "clamp(12px, 3.5vw, 14px)",
             color: "#e2e8f0",
             fontWeight: 600,
             letterSpacing: "0.15em",
             textTransform: "uppercase",
-            textShadow: "0 2px 10px rgba(0,0,0,0.9)"
+            textShadow: "0 2px 10px rgba(0,0,0,0.9)",
+            maxWidth: "100%",
+            wordBreak: "break-word",
           }}>
             Dart Ranking Dashboard
           </p>
