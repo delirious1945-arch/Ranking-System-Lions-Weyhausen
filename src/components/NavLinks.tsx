@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
     { href: "/", label: "Dashboard" },
+    { href: "/admin?secret=dev-lions-2026", label: "Admin" },
 ];
 
 export default function NavLinks() {
@@ -11,7 +12,7 @@ export default function NavLinks() {
     return (
         <nav style={{ display: "flex", gap: 4 }}>
             {NAV_ITEMS.map(({ href, label }) => {
-                const active = path === href;
+                const active = path === href || (href.startsWith("/admin") && path === "/admin");
                 return (
                     <Link key={href} href={href} style={{
                         textDecoration: "none",

@@ -21,16 +21,23 @@
   --gold: #f2cc60;
   --silver: #8b949e;
   --bronze: #af875f;
+
+  /* Ranking Highlights */
+  --rank-top5: #58a6ff;
+  --rank-top5-bg: rgba(88, 166, 255, 0.12);
+  --rank-6to10: #3fb950;
+  --rank-6to10-bg: rgba(63, 185, 80, 0.10);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
-  background: var(--bg) !important;
-  color: var(--text) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   margin: 0;
   min-height: 100vh;
@@ -58,23 +65,27 @@ body {
 .dart-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .dart-table th {
   text-align: left;
-  padding: 16px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   background: var(--bg-card-hover);
   border-bottom: 2px solid var(--border-accent);
+  white-space: nowrap;
 }
 
 .dart-table td {
-  padding: 16px 24px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .dart-table tr:last-child td {
@@ -95,6 +106,30 @@ body {
   font-weight: 600;
 }
 
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .dart-table td,
+  .dart-table th {
+    padding: 8px 6px !important;
+    font-size: 12px !important;
+  }
+
+  .tabs-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (min-width: 641px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -108,10 +143,4 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--border-accent);
   border-radius: 3px;
-}
-
-html,
-body {
-  background: #0f1117;
-  color: #e8eaf0;
 }

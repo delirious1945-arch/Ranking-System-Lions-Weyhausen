@@ -2,6 +2,7 @@ import "./globals.css";
 import Link from "next/link";
 import UpdateSnapshotButton from "@/components/UpdateSnapshotButton";
 import NavLinks from "@/components/NavLinks";
+import NameGate from "@/components/NameGate";
 
 function getWeekId(): string {
   const now = new Date();
@@ -23,46 +24,56 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body style={{ margin: 0, minHeight: "100vh", backgroundColor: "#0b0d11", color: "#f0f2f5", fontFamily: "Inter, sans-serif" }}>
 
-        {/* Top Navigation */}
-        <header style={{
-          position: "sticky", top: 0, zIndex: 100,
-          borderBottom: "1px solid var(--border)",
-          background: "rgba(15,17,23,0.92)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-        }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <NameGate>
+          {/* Top Navigation */}
+          <header style={{
+            position: "sticky", top: 0, zIndex: 100,
+            borderBottom: "1px solid var(--border)",
+            background: "rgba(15,17,23,0.92)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}>
+            <div style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "0 16px",
+              height: 54,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
 
-            {/* Logo + Nav */}
-            <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-              <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12 }}>
-                <img src="/logo.png" alt="Lions Weyhausen Logo" style={{ width: 32, height: 32, objectFit: "contain" }} />
-                <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", letterSpacing: "-0.01em" }}>
-                  DartRanking
-                </span>
-              </Link>
+              {/* Logo + Nav */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+                  <img src="/logo.png" alt="Lions Weyhausen Logo" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                  <span className="hide-mobile" style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                    DartRanking
+                  </span>
+                </Link>
 
-              <NavLinks />
-            </div>
-
-            {/* Right side */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Woche <code style={{ fontFamily: "monospace", color: "var(--text)", background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 4 }}>{weekId}</code>
+                <NavLinks />
               </div>
-              <UpdateSnapshotButton />
-            </div>
-          </div>
-        </header>
 
-        {/* Main */}
-        <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
-          {children}
-        </main>
+              {/* Right side */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="hide-mobile" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  KW <code style={{ fontFamily: "monospace", color: "var(--text)", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4, fontSize: 11 }}>{weekId}</code>
+                </div>
+                <UpdateSnapshotButton />
+              </div>
+            </div>
+          </header>
+
+          {/* Main */}
+          <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px" }}>
+            {children}
+          </main>
+        </NameGate>
 
       </body>
     </html>
