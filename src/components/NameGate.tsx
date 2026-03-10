@@ -30,8 +30,9 @@ function normalize(s: string) {
 }
 
 export default function NameGate({ children }: { children: React.ReactNode }) {
-    const [authed, setAuthed] = useState<boolean | null>(null); // null = checking
-    const [name, setName] = useState('');
+    const [authed, setAuthed] = useState<boolean | null>(null);
+    const [vorname, setVorname] = useState('');
+    const [nachname, setNachname] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -46,26 +47,32 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        const match = ALLOWED_NAMES.find(n => normalize(n) === normalize(name));
+        const fullName = `${vorname.trim()} ${nachname.trim()}`;
+        const match = ALLOWED_NAMES.find(n => normalize(n) === normalize(fullName));
         if (match) {
             localStorage.setItem(STORAGE_KEY, match);
             setAuthed(true);
         } else {
-            setError('Name nicht gefunden. Bitte gib deinen vollständigen Vor- und Nachnamen ein.');
+            setError('Name nicht gefunden. Bitte überprüfe deine Eingabe.');
         }
     };
 
-    // Still checking localStorage
-    if (authed === null) {
-        return null;
-    }
+    if (authed === null) return null;
+    if (authed) return <>{children}</>;
 
-    // Authenticated → show app
-    if (authed) {
-        return <>{children}</>;
-    }
+    const inputStyle: React.CSSProperties = {
+        width: '100%',
+        padding: '14px 16px',
+        fontSize: 16,
+        background: '#0b0d11',
+        color: '#f0f2f5',
+        border: `1px solid ${error ? '#f85149' : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: 10,
+        outline: 'none',
+        boxSizing: 'border-box',
+        transition: 'border-color 0.15s',
+    };
 
-    // Login screen
     return (
         <div style={{
             minHeight: '100vh',
@@ -75,11 +82,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
             padding: 24,
             background: '#0b0d11',
         }}>
-            <div style={{
-                width: '100%',
-                maxWidth: 400,
-                textAlign: 'center',
-            }}>
+            <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
                 {/* Logo */}
                 <div style={{ marginBottom: 32 }}>
                     <img
@@ -87,13 +90,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                         alt="Lions Weyhausen"
                         style={{ width: 80, height: 80, objectFit: 'contain', margin: '0 auto', display: 'block', opacity: 0.9 }}
                     />
-                    <h1 style={{
-                        margin: '20px 0 8px',
-                        fontSize: 24,
-                        fontWeight: 800,
-                        color: '#f0f2f5',
-                        letterSpacing: '-0.03em',
-                    }}>
+                    <h1 style={{ margin: '20px 0 8px', fontSize: 24, fontWeight: 800, color: '#f0f2f5', letterSpacing: '-0.03em' }}>
                         Lions Weyhausen
                     </h1>
                     <p style={{ color: '#8b949e', fontSize: 14, margin: 0 }}>
@@ -108,44 +105,38 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                     borderRadius: 16,
                     padding: 28,
                 }}>
-                    <label style={{
-                        display: 'block',
-                        textAlign: 'left',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: '#8b949e',
-                        marginBottom: 8,
-                    }}>
-                        Vor- und Nachname
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={e => { setName(e.target.value); setError(''); }}
-                        placeholder="z.B. Sebastian Kirste"
-                        autoComplete="name"
-                        autoFocus
-                        style={{
-                            width: '100%',
-                            padding: '14px 16px',
-                            fontSize: 16,
-                            background: '#0b0d11',
-                            color: '#f0f2f5',
-                            border: `1px solid ${error ? '#f85149' : 'rgba(255,255,255,0.1)'}`,
-                            borderRadius: 10,
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                            transition: 'border-color 0.15s',
-                        }}
-                    />
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#8b949e', marginBottom: 6 }}>
+                                Vorname
+                            </label>
+                            <input
+                                type="text"
+                                value={vorname}
+                                onChange={e => { setVorname(e.target.value); setError(''); }}
+                                placeholder="Vorname"
+                                autoComplete="given-name"
+                                autoFocus
+                                style={inputStyle}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#8b949e', marginBottom: 6 }}>
+                                Nachname
+                            </label>
+                            <input
+                                type="text"
+                                value={nachname}
+                                onChange={e => { setNachname(e.target.value); setError(''); }}
+                                placeholder="Nachname"
+                                autoComplete="family-name"
+                                style={inputStyle}
+                            />
+                        </div>
+                    </div>
 
                     {error && (
-                        <p style={{
-                            color: '#f85149',
-                            fontSize: 13,
-                            margin: '10px 0 0',
-                            textAlign: 'left',
-                        }}>
+                        <p style={{ color: '#f85149', fontSize: 13, margin: '0 0 12px', textAlign: 'left' }}>
                             {error}
                         </p>
                     )}
@@ -154,7 +145,6 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                         type="submit"
                         style={{
                             width: '100%',
-                            marginTop: 16,
                             padding: '14px',
                             fontSize: 15,
                             fontWeight: 700,
