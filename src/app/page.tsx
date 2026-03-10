@@ -56,7 +56,7 @@ const TABS = [
 
 function rankStyle(rank: number): { color: string; bg: string } {
   if (rank <= 5) return { color: "var(--rank-top5)", bg: "var(--rank-top5-bg)" };
-  if (rank <= 10) return { color: "var(--rank-6to10)", bg: "var(--rank-6to10-bg)" };
+  if (rank >= 6 && rank <= 12) return { color: "var(--rank-6to10)", bg: "var(--rank-6to10-bg)" };
   return { color: "var(--text-muted)", bg: "transparent" };
 }
 
@@ -396,37 +396,89 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <div style={{ height: 1, flex: 1, background: "var(--border)" }} />
             </div>
             <div className="card" style={{ padding: "16px 20px" }}>
-              <div style={{ display: "flex", gap: 20, marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-top5)", verticalAlign: "middle" }} />
-                  <span style={{ fontSize: 11, fontWeight: 600 }}>Elite (Platz 1–5)</span>
+              <div style={{ display: "flex", gap: 24, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "var(--rank-top5)" }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-top5)" }}>A Team (Platz 1–5)</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "var(--rank-6to10)", verticalAlign: "middle" }} />
-                  <span style={{ fontSize: 11, fontWeight: 600 }}>Top 10 (Platz 6–10)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "var(--rank-6to10)" }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-6to10)" }}>B Team (Platz 6–12)</span>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px 24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "32px 24px" }}>
+                {/* Tables for each category */}
                 {[
-                  { k: "∅ Average", desc: "Gesamtdurchschnitt pro Aufnahme", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
-                  { k: "∅ 9 Darts", desc: "Durchschnitt der ersten 9 Darts", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
-                  { k: "∅ 18 Darts", desc: "Durchschnitt der ersten 18 Darts", logic: "<25=0 Pkt ... ≥60=10 Pkt" },
-                  { k: "Siegquote", desc: "Verhältnis gewonnene zu gesp. Einzel", logic: "<10%=0 Pkt ... ≥90%=10 Pkt" },
-                  { k: "Hohe Scores pro Leg", desc: "Schnitt von Würfen ≥80 pro Leg", logic: "<0.2=0 Pkt ... >2.0=10 Pkt" },
-                ].map(({ k, desc, logic }) => (
-                  <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <div style={{ fontWeight: 800, color: "#38bdf8", fontSize: 12, letterSpacing: '0.02em' }}>{k}</div>
-                    <div style={{ fontSize: 11, color: "var(--text)", fontWeight: 500 }}>{desc}</div>
-                    <div style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: 'monospace', background: 'rgba(255,255,255,0.03)', padding: '4px 8px', borderRadius: 4, marginTop: 4 }}>
-                      {logic}
+                  {
+                    title: "∅ Average | ∅ 9-Dart | ∅ 18-Dart",
+                    desc: "Punkteverteilung basierend auf dem Durchschnitt",
+                    steps: [
+                      { range: "< 25.0", pts: 0 },
+                      { range: "25.0 – 29.9", pts: 1 },
+                      { range: "30.0 – 34.9", pts: 2 },
+                      { range: "35.0 – 39.9", pts: 3 },
+                      { range: "40.0 – 42.4", pts: 4 },
+                      { range: "42.5 – 44.9", pts: 5 },
+                      { range: "45.0 – 47.4", pts: 6 },
+                      { range: "47.5 – 49.9", pts: 7 },
+                      { range: "50.0 – 54.9", pts: 8 },
+                      { range: "55.0 – 59.9", pts: 9 },
+                      { range: "≥ 60.0", pts: 10 }
+                    ]
+                  },
+                  {
+                    title: "Siegquote (%)",
+                    desc: "Anteil gewonnener Einzel-Matches",
+                    steps: [
+                      { range: "< 10.0%", pts: 0 },
+                      { range: "10 – 19.9%", pts: 1 },
+                      { range: "20 – 29.9%", pts: 2 },
+                      { range: "30 – 39.9%", pts: 3 },
+                      { range: "40 – 49.9%", pts: 4 },
+                      { range: "50 – 59.9%", pts: 5 },
+                      { range: "60 – 69.9%", pts: 6 },
+                      { range: "70 – 79.9%", pts: 7 },
+                      { range: "80 – 84.9%", pts: 8 },
+                      { range: "85 – 89.9%", pts: 9 },
+                      { range: "≥ 90.0%", pts: 10 }
+                    ]
+                  },
+                  {
+                    title: "Hohe Scores pro Leg (H/L)",
+                    desc: "Wurf-Zähler ≥ 80 pro gespieltem Leg",
+                    steps: [
+                      { range: "0.00 – 0.20", pts: 0 },
+                      { range: "0.21 – 0.40", pts: 1 },
+                      { range: "0.41 – 0.60", pts: 2 },
+                      { range: "0.61 – 0.80", pts: 3 },
+                      { range: "0.81 – 1.00", pts: 4 },
+                      { range: "1.01 – 1.20", pts: 5 },
+                      { range: "1.21 – 1.40", pts: 6 },
+                      { range: "1.41 – 1.60", pts: 7 },
+                      { range: "1.61 – 1.80", pts: 8 },
+                      { range: "1.81 – 2.00", pts: 9 },
+                      { range: "> 2.00", pts: 10 }
+                    ]
+                  }
+                ].map((cat, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ fontWeight: 800, color: "#38bdf8", fontSize: 13, marginBottom: 2 }}>{cat.title}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 12 }}>{cat.desc}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 12px', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.04)' }}>
+                      {cat.steps.map((s, idx) => (
+                        <div key={idx} style={{ display: 'contents' }}>
+                          <span style={{ fontSize: 10, color: "var(--text)", fontFamily: 'monospace' }}>{s.range}</span>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "#38bdf8", textAlign: 'right' }}>{s.pts} Pkt</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)", fontSize: 10, color: "var(--text-muted)", fontStyle: 'italic' }}>
-                💡 Die Gesamtpunkte berechnen sich aus dem gewichteten Durchschnitt dieser 5 Kategorien.
+              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.04)", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                💡 <strong>Berechnung:</strong> Die Gesamtpunktzahl ist die Summe der Punkte aus allen 5 Kategorien (gewichtet nach Einstellungen des Admins). Ein Spieler wird nur dann gelistet, wenn er in der entsprechenden Woche aktiv war.
               </div>
             </div>
           </section>
