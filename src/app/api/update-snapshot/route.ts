@@ -378,20 +378,17 @@ export async function POST() {
             const points_k5 = calculatePointsK5(avg_high_per_leg);
 
             // Apply dynamic weights
-            const total_points =
-                (points_k1 * (config!.weight_k1 / 0.1)) + // Normalized weight where 0.1 = 1x factor for a 10pt category?
-                // Wait, if weights sum to 1.0 (100%), and categories are 0-10, 
-                // we should multiply categorical points by (weight * 10) likely or just sum them directly if 
-                // the user wants the total points to reflect the weighted sum of 0-10 values.
-                // 10 points * 0.20 = 2.0. Sum would be up to 10.0.
+            // Categories are 0-10 points. Weights sum to 1.0 (100%).
+            // (weighted_sum) gives a value between 0 and 10.
+            // Multiplying by 5 gives a total points range of 0-50 (consistent with 5 categories * 10 pts).
+            const weighted_sum =
                 (points_k1 * config!.weight_k1) +
                 (points_k2 * config!.weight_k2) +
                 (points_k3 * config!.weight_k3) +
                 (points_k4 * config!.weight_k4) +
                 (points_k5 * config!.weight_k5);
 
-            // Multiply by 10 to keep it in a familiar range (0-100 total points possible)
-            const final_total = Math.round(total_points * 10 * 100) / 100;
+            const final_total = Math.round(weighted_sum * 5 * 100) / 100;
 
             return {
                 player_name: p.player_name,
