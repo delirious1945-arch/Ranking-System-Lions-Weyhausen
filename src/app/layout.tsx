@@ -51,8 +51,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Logo + Nav */}
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
-                  <img src="/logo.png" alt="Lions Weyhausen Logo" style={{ width: 28, height: 28, objectFit: "contain" }} />
-                  <span className="hide-mobile" style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                  <div style={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    <div style={{
+                      position: "absolute",
+                      width: 44, height: 44,
+                      borderRadius: "50%",
+                      background: "rgba(56, 189, 248, 0.08)",
+                      filter: "blur(8px)",
+                    }} />
+                    <img src="/logo.png" alt="Lions Weyhausen Logo" style={{
+                      width: 36, height: 36, objectFit: "contain", position: "relative", zIndex: 1,
+                      filter: "drop-shadow(0 0 6px rgba(56, 189, 248, 0.3))",
+                    }} />
+                  </div>
+                  <span className="hide-mobile" style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", letterSpacing: "-0.02em" }}>
                     DartRanking
                   </span>
                 </Link>

@@ -78,10 +78,26 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, position: "relative" }}>
+
+      {/* Subtle Watermark Logo */}
+      <div style={{
+        position: "absolute",
+        top: -20,
+        right: -20,
+        width: 180,
+        height: 180,
+        backgroundImage: "url(/logo.png)",
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        opacity: 0.03,
+        pointerEvents: "none",
+        zIndex: 0,
+      }} />
 
       {/* Header */}
-      <div style={{ padding: "0 2px" }}>
+      <div style={{ padding: "0 2px", position: "relative", zIndex: 1 }}>
         <h1 style={{ margin: 0, fontSize: "clamp(18px, 5vw, 22px)", fontWeight: 800, letterSpacing: "-0.03em" }}>
           Ranking Dashboard
         </h1>

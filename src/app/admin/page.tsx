@@ -1,28 +1,32 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Upload, Download, ShieldAlert, CheckCircle, Database } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Upload, Download, ShieldAlert, CheckCircle, Database, Lock } from "lucide-react";
 import ManualGameForm from "@/components/ManualGameForm";
 import RankingConfigForm from "@/components/RankingConfigForm";
 
 export const dynamic = "force-dynamic";
 
 function AdminContent() {
-    const searchParams = useSearchParams();
     const router = useRouter();
-    const [authorized, setAuthorized] = useState(false);
+    const [authorized, setAuthorized] = useState<boolean | null>(null);
+    const [userName, setUserName] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [importStatus, setImportStatus] = useState("");
     const [vetoUsername, setVetoUsername] = useState("");
     const [vetoReason, setVetoReason] = useState("");
 
     useEffect(() => {
-        const secret = searchParams.get("secret");
-        if (secret === "dev-lions-2026") {
+        const storedName = localStorage.getItem('lions-auth-name');
+        if (storedName === 'Sebastian Kirste') {
             setAuthorized(true);
+            setUserName(storedName);
+        } else {
+            setAuthorized(false);
+            setUserName(storedName || '');
         }
-    }, [searchParams]);
+    }, []);
 
     const handleImport = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,18 +63,59 @@ function AdminContent() {
         }
     };
 
+    // Loading state
+    if (authorized === null) return null;
+
     if (!authorized) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <ShieldAlert className="w-16 h-16 text-red-500 mb-4" />
-                <h1 className="text-2xl font-bold text-white">Zugriff Verweigert</h1>
-                <p className="text-slate-400 mt-2">Dieser Bereich ist nur für Entwickler zugänglich.</p>
-                <button
-                    onClick={() => router.push("/")}
-                    className="mt-6 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                >
-                    Zurück zum Dashboard
-                </button>
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                minHeight: '60vh', textAlign: 'center', padding: '40px 20px',
+            }}>
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: 24,
+                    padding: '48px 40px',
+                    maxWidth: 420,
+                }}>
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        borderRadius: '50%',
+                        width: 72, height: 72,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 20px',
+                    }}>
+                        <Lock size={32} color="#ef4444" />
+                    </div>
+                    <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f8fafc', margin: '0 0 8px' }}>
+                        Zugriff Verweigert
+                    </h1>
+                    <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 8px', lineHeight: 1.5 }}>
+                        Der Admin-Bereich ist ausschließlich für autorisierte Administratoren zugänglich.
+                    </p>
+                    {userName && (
+                        <p style={{ color: '#64748b', fontSize: 12, margin: '0 0 24px' }}>
+                            Angemeldet als: <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{userName}</span>
+                        </p>
+                    )}
+                    <button
+                        onClick={() => router.push("/")}
+                        style={{
+                            padding: '12px 28px',
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 12,
+                            color: '#e2e8f0',
+                            fontWeight: 600,
+                            fontSize: 14,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        Zurück zum Dashboard
+                    </button>
+                </div>
             </div>
         );
     }
