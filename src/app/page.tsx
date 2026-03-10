@@ -297,7 +297,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                                   {p.verein}
                                 </span>
                               </div>
-                              {isVeto && <span style={{ marginLeft: 6, fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3 }}>VETO</span>}
+                              {isVeto && <span style={{ marginLeft: 6, fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3 }}>Für Top 5 Auswahl nicht berücksichtigt</span>}
                             </td>
                             <td style={{ textAlign: "right", fontWeight: 800, color: rs.color, fontSize: 14 }}>{p.total_points}</td>
                             <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k1 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k1}</td>
