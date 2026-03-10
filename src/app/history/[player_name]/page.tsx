@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
+import PlayerManualGames from "@/components/PlayerManualGames";
 
 export default async function PlayerHistoryPage(
     props: { params: Promise<{ player_name: string }> }
@@ -22,7 +23,7 @@ export default async function PlayerHistoryPage(
         return (
             <div className="text-center py-20 text-slate-400">
                 <h2 className="text-2xl font-bold text-white mb-4">Spieler nicht gefunden</h2>
-                <p>Keine Daten für "{decodePlayerName}" vorhanden.</p>
+                <p>Keine Daten für &quot;{decodePlayerName}&quot; vorhanden.</p>
                 <Link href="/" className="text-indigo-400 hover:text-indigo-300 mt-6 inline-block">
                     Zurück zum Dashboard
                 </Link>
@@ -91,8 +92,8 @@ export default async function PlayerHistoryPage(
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
                                 {history.slice().reverse().map((h: any, i: number, arr: any[]) => {
-                                    const prev = arr[i + 1]; // because array is reversed, next element is previous week
-                                    const rankDelta = prev ? prev.rank - h.rank : 0; // standard: negative info is worse
+                                    const prev = arr[i + 1];
+                                    const rankDelta = prev ? prev.rank - h.rank : 0;
                                     const pointsDelta = prev ? h.total_points - prev.total_points : 0;
                                     const avgDelta = prev ? h.avg_total - prev.avg_total : 0;
 
@@ -129,6 +130,9 @@ export default async function PlayerHistoryPage(
                     </div>
                 </div>
             </div>
+
+            {/* Manual Games for this player */}
+            <PlayerManualGames playerName={decodePlayerName} />
 
         </div>
     );
