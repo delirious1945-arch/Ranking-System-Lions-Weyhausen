@@ -398,7 +398,7 @@ export default function ManualGameForm() {
                 color: '#94a3b8'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Zap size={12} color="#38bdf8" /> POWERED BY LIONS WEYHAUSEN ENGINE
+                    <Zap size={12} color="#38bdf8" /> © copyright by Sebastian Kirste
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span>v2.0 FULL GLOW</span>
