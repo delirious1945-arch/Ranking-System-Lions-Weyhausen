@@ -82,18 +82,18 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {/* Hero Banner */}
       <div style={{
         position: "relative",
-        padding: "60px 32px 48px",
+        padding: "30px 20px 40px",
         borderRadius: 24,
-        background: "#0f172a",
-        border: "1px solid rgba(56, 189, 248, 0.2)",
+        background: "#080b12",
+        border: "1px solid rgba(56, 189, 248, 0.3)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
         alignItems: "center",
+        justifyContent: "flex-start",
         textAlign: "center",
-        minHeight: 280,
-        boxShadow: "0 20px 50px -10px rgba(0,0,0,0.6), inset 0 0 40px rgba(56, 189, 248, 0.1)",
+        minHeight: 340,
+        boxShadow: "0 20px 50px -10px rgba(0,0,0,0.8), inset 0 0 60px rgba(236, 72, 153, 0.15)",
       }}>
         {/* Dynamic Neon Background */}
         <div style={{
@@ -102,80 +102,75 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           backgroundImage: "url(/hero-bg.png)",
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center 60%",
-          opacity: 0.6,
-          filter: "contrast(1.1) brightness(0.8)",
+          backgroundPosition: "center 40%",
+          opacity: 0.9,
+          filter: "contrast(1.2) brightness(0.9) saturate(1.2)",
           pointerEvents: "none",
           zIndex: 0,
         }} />
 
-        {/* Gradients for depth and readability */}
+        {/* Subtle top gradient for text readability */}
         <div style={{
           position: "absolute",
-          inset: 0,
-          background: "linear-gradient(to top, rgba(11, 13, 17, 0.95) 0%, rgba(11, 13, 17, 0.4) 50%, rgba(11, 13, 17, 0.8) 100%)",
+          top: 0, left: 0, right: 0, height: "40%",
+          background: "linear-gradient(to bottom, rgba(8,11,18,0.9) 0%, transparent 100%)",
           zIndex: 1,
         }} />
 
         {/* Content */}
-        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* Centered Club Logo */}
-          <div style={{ position: "relative", marginBottom: 16 }}>
-            <div style={{
-              position: "absolute",
-              top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 140, height: 140,
-              background: "radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, transparent 60%)",
-              filter: "blur(15px)",
-              zIndex: 0,
-            }} />
-            <img src="/logo.png" alt="Lions Weyhausen" style={{
-              width: 110, height: 110, objectFit: "contain",
-              position: "relative", zIndex: 1,
-              filter: "drop-shadow(0 0 20px rgba(255,255,255,0.2))",
-            }} />
-          </div>
+        <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", height: "100%" }}>
 
-          <div style={{
-            display: "inline-block",
-            padding: "4px 14px",
-            background: "rgba(56, 189, 248, 0.15)",
-            border: "1px solid rgba(56, 189, 248, 0.3)",
-            borderRadius: 20,
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: "0.15em",
-            color: "#38bdf8",
-            marginBottom: 16,
-            textTransform: "uppercase",
-            boxShadow: "0 0 20px rgba(56, 189, 248, 0.2)",
-          }}>
-            Saison 2025/26
-          </div>
+          {/* Top Text (Like "YOUR TEXT" in reference) */}
           <h1 style={{
-            margin: "0 0 8px",
-            fontSize: "clamp(32px, 6vw, 48px)",
-            fontWeight: 900,
-            letterSpacing: "0.05em",
+            margin: "0 0 4px",
+            fontFamily: "Impact, 'Arial Narrow', sans-serif",
+            fontSize: "clamp(36px, 8vw, 64px)",
+            fontWeight: 800,
+            letterSpacing: "0.02em",
             color: "#ffffff",
-            lineHeight: 1.1,
+            lineHeight: 1,
             textTransform: "uppercase",
-            textShadow: "0 0 20px rgba(255,255,255,0.3), 0 4px 10px rgba(0,0,0,0.8)"
+            transform: "scaleY(1.15)", // Creates the tall condensed look
+            textShadow: "0 4px 20px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2)"
           }}>
             LIONS WEYHAUSEN
           </h1>
           <p style={{
-            margin: 0,
-            fontSize: "clamp(15px, 2.5vw, 18px)",
-            color: "#cbd5e1",
+            margin: "4px 0 0",
+            fontSize: "14px",
+            color: "#e2e8f0",
             fontWeight: 600,
-            letterSpacing: "0.03em",
-            textShadow: "0 2px 5px rgba(0,0,0,0.8)"
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            textShadow: "0 2px 10px rgba(0,0,0,0.9)"
           }}>
             Dart Ranking Dashboard
-            {lastUpdated && <span style={{ color: "#94a3b8", marginLeft: 8 }}>· Aktualisiert: {lastUpdated}</span>}
           </p>
+
+          <div style={{ flexGrow: 1 }} /> {/* Spacer to push logo to center */}
+
+          {/* Centered Club Logo */}
+          <div style={{
+            position: "relative",
+            marginTop: 20,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+          }}>
+            <div style={{
+              position: "absolute",
+              width: 160, height: 160,
+              background: "radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, transparent 65%)",
+              filter: "blur(20px)",
+              zIndex: 0,
+            }} />
+            <img src="/logo.png" alt="Lions Weyhausen" style={{
+              width: 140, height: 140, objectFit: "contain",
+              position: "relative", zIndex: 1,
+              filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.6)) drop-shadow(0 0 15px rgba(255,255,255,0.15))",
+            }} />
+          </div>
+
         </div>
       </div>
 

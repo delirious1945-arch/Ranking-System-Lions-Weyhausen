@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const ALLOWED_NAMES = [
+const DEFAULT_ALLOWED_NAMES = [
     'Sebastian Kirste',
     'Jens Goltermann',
     'Erik Schremmer',
@@ -26,6 +26,7 @@ const ALLOWED_NAMES = [
 const ADMIN_NAME = 'Sebastian Kirste';
 const ADMIN_PASSWORD = 'Luca030915!';
 const STORAGE_KEY = 'lions-auth-name';
+const ALLOWED_NAMES_KEY = 'lions-allowed-names';
 
 function normalize(s: string) {
     return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -39,11 +40,31 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
     const [needsPassword, setNeedsPassword] = useState(false);
     const [error, setError] = useState('');
 
+    const [allowedNames, setAllowedNames] = useState<string[]>([]);
+
     useEffect(() => {
+        // Load allowed names
+        const storedAllowed = localStorage.getItem(ALLOWED_NAMES_KEY);
+        let names = DEFAULT_ALLOWED_NAMES;
+        if (storedAllowed) {
+            try {
+                names = JSON.parse(storedAllowed);
+            } catch (e) {
+                console.error("Failed to parse allowed names", e);
+            }
+        } else {
+            localStorage.setItem(ALLOWED_NAMES_KEY, JSON.stringify(names));
+        }
+        setAllowedNames(names);
+
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && ALLOWED_NAMES.some(n => normalize(n) === normalize(stored))) {
+        if (stored && names.some(n => normalize(n) === normalize(stored))) {
             setAuthed(true);
         } else {
+            if (stored) {
+                // Was authed, but removed from list
+                localStorage.removeItem(STORAGE_KEY);
+            }
             setAuthed(false);
         }
     }, []);
@@ -53,7 +74,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
         setError('');
 
         const fullName = `${vorname.trim()} ${nachname.trim()}`;
-        const match = ALLOWED_NAMES.find(n => normalize(n) === normalize(fullName));
+        const match = allowedNames.find(n => normalize(n) === normalize(fullName));
 
         if (!match) {
             setError('Name nicht gefunden. Bitte überprüfe deine Eingabe.');
