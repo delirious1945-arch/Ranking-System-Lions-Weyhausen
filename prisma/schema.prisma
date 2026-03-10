@@ -106,8 +106,12 @@ model ManualGame {
   player_name     String
   date            DateTime @default(now())
   game1_avg       Float
+  game1_avg_9     Float    @default(0)
+  game1_avg_18    Float    @default(0)
   game1_win       Boolean
   game2_avg       Float
+  game2_avg_9     Float    @default(0)
+  game2_avg_18    Float    @default(0)
   game2_win       Boolean
   cnt_80          Int
   cnt_100         Int
@@ -115,5 +119,5 @@ model ManualGame {
   cnt_180         Int
   legs_total      Int
   created_at      DateTime @default(now())
-  week_id         String?  // Optional: to target specific weeks
+  week_id         String?
 }

@@ -18,8 +18,12 @@ export async function POST(request: Request) {
             data: {
                 player_name: data.player_name,
                 game1_avg: parseFloat(data.game1_avg),
+                game1_avg_9: parseFloat(data.game1_avg_9 || data.game1_avg),
+                game1_avg_18: parseFloat(data.game1_avg_18 || data.game1_avg),
                 game1_win: data.game1_win,
                 game2_avg: parseFloat(data.game2_avg),
+                game2_avg_9: parseFloat(data.game2_avg_9 || data.game2_avg),
+                game2_avg_18: parseFloat(data.game2_avg_18 || data.game2_avg),
                 game2_win: data.game2_win,
                 cnt_80: parseInt(data.cnt_80),
                 cnt_100: parseInt(data.cnt_100),

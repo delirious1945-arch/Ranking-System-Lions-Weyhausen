@@ -279,37 +279,41 @@ export async function POST() {
         for (const mg of manualGames) {
             const existing = aggregatedMap.get(mg.player_name);
             const mgLegs = mg.legs_total;
+            const halfLegs = mgLegs / 2;
             const mgWins = (mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0);
+
+            const mgWeightedTotal = (mg.game1_avg * halfLegs) + (mg.game2_avg * halfLegs);
+            const mgWeighted9 = (mg.game1_avg_9 * halfLegs) + (mg.game2_avg_9 * halfLegs);
+            const mgWeighted18 = (mg.game1_avg_18 * halfLegs) + (mg.game2_avg_18 * halfLegs);
 
             if (existing) {
                 existing.wins += mgWins;
-                existing.legs_won += (mgLegs / 2); // Approximate won legs
-                existing.legs_lost += (mgLegs / 2);
+                existing.legs_won += halfLegs;
+                existing.legs_lost += halfLegs;
                 existing.gespielte_single_spiele += 2;
                 existing.cnt_80 += mg.cnt_80;
                 existing.cnt_100 += mg.cnt_100;
                 existing.cnt_140 += mg.cnt_140;
                 existing.cnt_180 += mg.cnt_180;
-
-                existing.weighted_avg_total += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2));
-                existing.weighted_avg_9 += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)); // Simplified
-                existing.weighted_avg_18 += (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2));
+                existing.weighted_avg_total += mgWeightedTotal;
+                existing.weighted_avg_9 += mgWeighted9;
+                existing.weighted_avg_18 += mgWeighted18;
                 existing.total_legs_for_avg += mgLegs;
             } else {
                 aggregatedMap.set(mg.player_name, {
                     player_name: mg.player_name,
-                    verein: "Lions Weyhausen", // Default for manual
+                    verein: "Lions Weyhausen",
                     wins: mgWins,
-                    legs_won: (mgLegs / 2),
-                    legs_lost: (mgLegs / 2),
+                    legs_won: halfLegs,
+                    legs_lost: halfLegs,
                     gespielte_single_spiele: 2,
                     cnt_80: mg.cnt_80,
                     cnt_100: mg.cnt_100,
                     cnt_140: mg.cnt_140,
                     cnt_180: mg.cnt_180,
-                    weighted_avg_total: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
-                    weighted_avg_9: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
-                    weighted_avg_18: (mg.game1_avg * (mgLegs / 2)) + (mg.game2_avg * (mgLegs / 2)),
+                    weighted_avg_total: mgWeightedTotal,
+                    weighted_avg_9: mgWeighted9,
+                    weighted_avg_18: mgWeighted18,
                     total_legs_for_avg: mgLegs,
                 });
             }
