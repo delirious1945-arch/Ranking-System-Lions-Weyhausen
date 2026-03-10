@@ -319,6 +319,18 @@ export async function POST() {
             }
         }
 
+        // --- Fetch Ranking Configuration ---
+        let config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
+        if (!config) {
+            config = {
+                weight_k1: 0.20,
+                weight_k2: 0.15,
+                weight_k3: 0.15,
+                weight_k4: 0.25,
+                weight_k5: 0.25
+            } as any;
+        }
+
         // --- Compute ranking for each player ---
         interface RankedPlayer {
             player_name: string;
@@ -347,7 +359,6 @@ export async function POST() {
 
         const ranked: RankedPlayer[] = Array.from(aggregatedMap.values()).map(p => {
             const gespielte_legs = p.legs_won + p.legs_lost;
-            // Recalculate averages from weights
             const avg_total = p.total_legs_for_avg > 0 ? p.weighted_avg_total / p.total_legs_for_avg : 0;
             const avg_9 = p.total_legs_for_avg > 0 ? p.weighted_avg_9 / p.total_legs_for_avg : 0;
             const avg_18 = p.total_legs_for_avg > 0 ? p.weighted_avg_18 / p.total_legs_for_avg : 0;
@@ -356,11 +367,6 @@ export async function POST() {
             const avg_high_per_leg = gespielte_legs > 0
                 ? Math.round((sum_high_scores / gespielte_legs) * 100) / 100 : 0;
 
-            // We use simple wins ratio for percentage. 
-            // Since we don't have accurate 'games_played' from all sources easily, 
-            // we'll rely on our aggregated wins vs expected games if available.
-            // For now, let's assume we can derive it or use a default.
-            // ScrapedPlayer had wins + losses. Let's re-calculate:
             const games_played = p.gespielte_single_spiele;
             const siegequote_pct = games_played > 0
                 ? Math.round((p.wins / games_played) * 10000) / 100 : 0;
@@ -370,6 +376,22 @@ export async function POST() {
             const points_k3 = calculatePointsK1toK3(avg_18);
             const points_k4 = calculatePointsK4(siegequote_pct);
             const points_k5 = calculatePointsK5(avg_high_per_leg);
+
+            // Apply dynamic weights
+            const total_points =
+                (points_k1 * (config!.weight_k1 / 0.1)) + // Normalized weight where 0.1 = 1x factor for a 10pt category?
+                // Wait, if weights sum to 1.0 (100%), and categories are 0-10, 
+                // we should multiply categorical points by (weight * 10) likely or just sum them directly if 
+                // the user wants the total points to reflect the weighted sum of 0-10 values.
+                // 10 points * 0.20 = 2.0. Sum would be up to 10.0.
+                (points_k1 * config!.weight_k1) +
+                (points_k2 * config!.weight_k2) +
+                (points_k3 * config!.weight_k3) +
+                (points_k4 * config!.weight_k4) +
+                (points_k5 * config!.weight_k5);
+
+            // Multiply by 10 to keep it in a familiar range (0-100 total points possible)
+            const final_total = Math.round(total_points * 10 * 100) / 100;
 
             return {
                 player_name: p.player_name,
@@ -393,7 +415,7 @@ export async function POST() {
                 points_k3,
                 points_k4,
                 points_k5,
-                total_points: points_k1 + points_k2 + points_k3 + points_k4 + points_k5,
+                total_points: final_total,
             };
         });
 

@@ -64,7 +64,7 @@ model SnapshotPlayerValue {
   points_k3               Int
   points_k4               Int
   points_k5               Int
-  total_points            Int
+  total_points            Float    // Changed from Int to Float for weighting
   rank                    Int
   source                  String
   source_id               String?
@@ -99,6 +99,16 @@ model ChangeLog {
   comment            String?
   is_manual_override Boolean  @default(false)
   created_at         DateTime @default(now())
+}
+
+model RankingConfig {
+  id        Int      @id @default(1)
+  weight_k1 Float    @default(0.20)
+  weight_k2 Float    @default(0.15)
+  weight_k3 Float    @default(0.15)
+  weight_k4 Float    @default(0.25)
+  weight_k5 Float    @default(0.25)
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 model ManualGame {
