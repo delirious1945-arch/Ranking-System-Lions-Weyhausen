@@ -77,10 +77,12 @@ export default function UpdateSnapshotButton() {
                         <path d="M1 4v6h6M23 20v-6h-6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                     </svg>
                 )}
-                {status === "loading" ? "Lädt..." :
-                    status === "success" ? "Aktualisiert" :
-                        status === "error" ? "Fehler" :
-                            "Aktualisieren"}
+                <span className="hide-mobile">
+                    {status === "loading" ? " Lädt..." :
+                        status === "success" ? " Aktualisiert" :
+                            status === "error" ? " Fehler" :
+                                " Aktualisieren"}
+                </span>
             </button>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>

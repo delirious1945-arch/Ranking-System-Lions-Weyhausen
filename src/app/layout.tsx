@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     filter: "drop-shadow(0 0 8px rgba(56, 189, 248, 0.3))",
                   }} />
                   <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-                    <span style={{ fontWeight: 900, fontSize: 15, color: "var(--text)", letterSpacing: "-0.02em" }}>
+                    <span className="hide-mobile" style={{ fontWeight: 900, fontSize: 15, color: "var(--text)", letterSpacing: "-0.02em" }}>
                       DartRanking
                     </span>
                     <span className="hide-mobile" style={{ fontSize: 9, color: "var(--text-dim)", fontWeight: 500, letterSpacing: "0.04em", marginTop: 1 }}>
