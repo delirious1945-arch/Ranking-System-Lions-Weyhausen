@@ -132,3 +132,12 @@ model ManualGame {
   created_at      DateTime @default(now())
   week_id         String?
 }
+
+model UserPassword {
+  id              Int      @id @default(autoincrement())
+  player_name     String   @unique
+  password_hash   String
+  must_change     Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+}

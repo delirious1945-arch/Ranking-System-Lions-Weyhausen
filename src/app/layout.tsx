@@ -4,6 +4,7 @@ import UpdateSnapshotButton from "@/components/UpdateSnapshotButton";
 import NavLinks from "@/components/NavLinks";
 import NameGate from "@/components/NameGate";
 import UserBadge from "@/components/UserBadge";
+import CookieBanner from "@/components/CookieBanner";
 
 function getWeekId(): string {
   const now = new Date();
@@ -99,6 +100,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px", position: "relative", zIndex: 1 }}>
             {children}
           </main>
+
+          {/* Footer */}
+          <footer style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'center', gap: 24, fontSize: 12, color: '#64748b' }}>
+            <a href="/datenschutz" style={{ color: '#64748b', textDecoration: 'none' }}>Datenschutz</a>
+            <a href="/impressum" style={{ color: '#64748b', textDecoration: 'none' }}>Impressum</a>
+            <span>© {new Date().getFullYear()} SC Weyhausen</span>
+          </footer>
+
+          <CookieBanner />
         </NameGate>
 
       </body>
