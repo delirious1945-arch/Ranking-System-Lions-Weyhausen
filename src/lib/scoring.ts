@@ -4,26 +4,34 @@ export function validateValue(value: number, min: number, max: number): boolean 
 
 export function calculatePointsK1toK3(avg: number): number {
   if (avg < 0 || avg > 200) throw new Error("Invalid average value");
-  
-  if (avg < 30.0) return 0;
-  if (avg <= 39.99) return 1; // 30.00 to 39.99 (since 39.90 is upper bound in prompt, use 39.99 for gapless)
-  if (avg <= 44.99) return 2; // 40.00 to 44.99
-  if (avg <= 49.99) return 3; // 45.00 to 49.99
-  if (avg <= 54.99) return 4; // 50.00 to 54.99
-  if (avg <= 59.99) return 5; // 55.00 to 59.99
-  return 5; // >= 60.00 Cap
+
+  if (avg < 25.0) return 0;
+  if (avg < 30.0) return 1;  // 25.00–29.99
+  if (avg < 35.0) return 2;  // 30.00–34.99
+  if (avg < 40.0) return 3;  // 35.00–39.99
+  if (avg < 42.5) return 4;  // 40.00–42.49
+  if (avg < 45.0) return 5;  // 42.50–44.99
+  if (avg < 47.5) return 6;  // 45.00–47.49
+  if (avg < 50.0) return 7;  // 47.50–49.99
+  if (avg < 55.0) return 8;  // 50.00–54.99
+  if (avg < 60.0) return 9;  // 55.00–59.99
+  return 10; // >= 60.00
 }
 
 export function calculatePointsK4(winRatePct: number): number {
   if (winRatePct < 0 || winRatePct > 100) throw new Error("Invalid win rate percentage");
 
   if (winRatePct < 10.0) return 0;
-  if (winRatePct <= 19.99) return 1;
-  if (winRatePct <= 44.99) return 2;
-  if (winRatePct <= 49.99) return 2; // Prompt explicitly assigns 2 points here as well.
-  if (winRatePct <= 79.99) return 3;
-  if (winRatePct <= 89.99) return 4;
-  return 5; // >= 90.00
+  if (winRatePct < 20.0) return 1;  // 10–19%
+  if (winRatePct < 30.0) return 2;  // 20–29%
+  if (winRatePct < 40.0) return 3;  // 30–39%
+  if (winRatePct < 50.0) return 4;  // 40–49%
+  if (winRatePct < 60.0) return 5;  // 50–59%
+  if (winRatePct < 70.0) return 6;  // 60–69%
+  if (winRatePct < 80.0) return 7;  // 70–79%
+  if (winRatePct < 85.0) return 8;  // 80–84%
+  if (winRatePct < 90.0) return 9;  // 85–89%
+  return 10; // >= 90%
 }
 
 export function calculatePointsK5(avgHighPerLeg: number): number {
@@ -94,7 +102,7 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
   const cnt_100 = records.reduce((sum, r) => sum + r.cnt_100, 0);
   const cnt_140 = records.reduce((sum, r) => sum + r.cnt_140, 0);
   const cnt_180 = records.reduce((sum, r) => sum + r.cnt_180, 0);
-  
+
   const sum_high_scores = cnt_80 + cnt_100 + cnt_140 + cnt_180;
 
   let avg_high_per_leg = 0;
@@ -116,7 +124,7 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
     avg_total = records.reduce((sum, r) => sum + (r.avg_total * r.gespielte_single_spiele), 0) / totalSingleSpiele;
     avg_9 = records.reduce((sum, r) => sum + (r.avg_9 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
     avg_18 = records.reduce((sum, r) => sum + (r.avg_18 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
-    
+
     avg_total = Math.round(avg_total * 100) / 100;
     avg_9 = Math.round(avg_9 * 100) / 100;
     avg_18 = Math.round(avg_18 * 100) / 100;
