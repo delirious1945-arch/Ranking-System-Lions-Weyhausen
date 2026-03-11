@@ -365,7 +365,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                                 "avg_high_per_leg";
 
                         const metricValue = p[valKey as keyof typeof p] as number;
-                        const displayValue = activeTab === "k4" ? `${metricValue.toFixed(0)}%` : metricValue.toFixed(1);
+                        const displayValue =
+                          activeTab === "k4" ? `${metricValue.toFixed(0)}%` :
+                            activeTab === "k5" ? metricValue.toFixed(2) :
+                              metricValue.toFixed(1);
 
                         return (
                           <tr key={p.id}>
