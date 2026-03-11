@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const DEFAULT_ALLOWED_NAMES = [
-    'Sebastian Kirste', 'Jens Goltermann', 'Erik Schremmer', 'Timo Feuerhahn',
-    'Dirk Ostermann', 'Nicholas Stedman', 'Kevin Emde', 'Maik Feuerhahn',
-    'Jannik Baier', 'Michael Kranz', 'Michael Gehrt', 'André Rathje',
-    'Malte Wolnik', 'Karen Schulz', 'Joachim Koch', 'Martin Wolnik',
-    'Karsten Kohnert', 'Uwe Kohnert',
-];
-
 const STORAGE_KEY = 'lions-auth-name';
-const ALLOWED_NAMES_KEY = 'lions-allowed-names';
 
 function normalize(s: string) {
     return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -44,22 +35,27 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
     const [allowedNames, setAllowedNames] = useState<string[]>([]);
 
     useEffect(() => {
-        const storedAllowed = localStorage.getItem(ALLOWED_NAMES_KEY);
-        let names = DEFAULT_ALLOWED_NAMES;
-        if (storedAllowed) {
-            try { names = JSON.parse(storedAllowed); } catch { /* ignore */ }
-        } else {
-            localStorage.setItem(ALLOWED_NAMES_KEY, JSON.stringify(names));
-        }
-        setAllowedNames(names);
+        const loadUsers = async () => {
+            try {
+                const res = await fetch('/api/auth/users');
+                if (res.ok) {
+                    const names = await res.json();
+                    setAllowedNames(names);
 
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && names.some(n => normalize(n) === normalize(stored))) {
-            setAuthed(true);
-        } else {
-            if (stored) localStorage.removeItem(STORAGE_KEY);
-            setAuthed(false);
-        }
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored && names.some((n: string) => normalize(n) === normalize(stored))) {
+                        setAuthed(true);
+                    } else {
+                        if (stored) localStorage.removeItem(STORAGE_KEY);
+                        setAuthed(false);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load allowed names", err);
+                setAuthed(false);
+            }
+        };
+        loadUsers();
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {

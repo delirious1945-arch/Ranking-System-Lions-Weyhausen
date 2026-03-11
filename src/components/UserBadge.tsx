@@ -35,10 +35,18 @@ export default function UserBadge() {
         const stored = localStorage.getItem('lions-auth-name');
         if (stored) setName(stored);
 
-        const storedAllowed = localStorage.getItem('lions-allowed-names');
-        if (storedAllowed) {
-            try { setAllowedNames(JSON.parse(storedAllowed)); } catch { /* ignore */ }
-        }
+        const loadUsers = async () => {
+            try {
+                const res = await fetch('/api/auth/users');
+                if (res.ok) {
+                    const data = await res.json();
+                    setAllowedNames(data);
+                }
+            } catch (err) {
+                console.error("Failed to load users", err);
+            }
+        };
+        loadUsers();
     }, []);
 
     const handleLogout = () => {
@@ -46,19 +54,47 @@ export default function UserBadge() {
         window.location.reload();
     };
 
-    const handleAddUser = () => {
+    const handleAddUser = async () => {
         if (!newUserName.trim()) return;
-        const updated = [...allowedNames, newUserName.trim()].sort();
-        setAllowedNames(updated);
-        localStorage.setItem('lions-allowed-names', JSON.stringify(updated));
-        setNewUserName('');
+        const playerName = newUserName.trim();
+
+        try {
+            const res = await fetch('/api/auth/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminName: name, newPlayerName: playerName })
+            });
+            if (res.ok) {
+                setAllowedNames(prev => [...prev, playerName].sort());
+                setNewUserName('');
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Fehler beim Hinzufügen');
+            }
+        } catch {
+            alert('Netzwerkfehler');
+        }
     };
 
-    const handleRemoveUser = (userToRemove: string) => {
+    const handleRemoveUser = async (userToRemove: string) => {
         if (userToRemove === 'Sebastian Kirste') return;
-        const updated = allowedNames.filter(n => n !== userToRemove);
-        setAllowedNames(updated);
-        localStorage.setItem('lions-allowed-names', JSON.stringify(updated));
+        if (!confirm(`${userToRemove} wirklich löschen?`)) return;
+
+        try {
+            const res = await fetch('/api/auth/remove-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminName: name, playerName: userToRemove })
+            });
+            if (res.ok) {
+                setAllowedNames(prev => prev.filter(n => n !== userToRemove));
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Fehler beim Entfernen');
+            }
+        } catch {
+            alert('Netzwerkfehler');
+        }
     };
 
     const handleChangePassword = async (e: React.FormEvent) => {
