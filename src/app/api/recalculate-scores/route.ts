@@ -10,7 +10,17 @@ export async function POST(request: Request) {
     }
 
     try {
-        // Get ALL player values across ALL snapshots
+        let config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
+        if (!config) {
+            config = {
+                weight_k1: 0.20,
+                weight_k2: 0.15,
+                weight_k3: 0.15,
+                weight_k4: 0.25,
+                weight_k5: 0.25
+            } as any;
+        }
+
         const allValues = await prisma.snapshotPlayerValue.findMany();
 
         let updated = 0;
@@ -21,7 +31,15 @@ export async function POST(request: Request) {
             const newK3 = calculatePointsK1toK3(v.avg_18);
             const newK4 = calculatePointsK4(v.siegequote_pct);
             const newK5 = calculatePointsK5(v.avg_high_per_leg);
-            const newTotal = newK1 + newK2 + newK3 + newK4 + newK5;
+
+            const weighted_sum =
+                (newK1 * config!.weight_k1) +
+                (newK2 * config!.weight_k2) +
+                (newK3 * config!.weight_k3) +
+                (newK4 * config!.weight_k4) +
+                (newK5 * config!.weight_k5);
+
+            const newTotal = Math.round(weighted_sum * 5 * 100) / 100;
 
             // Only update if something changed
             if (

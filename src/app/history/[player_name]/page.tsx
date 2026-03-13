@@ -55,7 +55,7 @@ export default async function PlayerHistoryPage(
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                         <Target className="w-5 h-5 text-indigo-400" />
-                        Aktuelle Statistiken (Woche {latest.snapshot.week_id})
+                        Aktuelle Statistiken ({latest.snapshot.week_id})
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-slate-800/50 p-4 rounded-xl">
@@ -127,6 +127,28 @@ export default async function PlayerHistoryPage(
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* Match Statistics Widget */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-emerald-400" />
+                    Aktuelle Match-Statistiken
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-800/40 p-5 rounded-xl border border-white/5">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Single Spiele</div>
+                        <div className="text-3xl font-black text-white">{latest.gespielte_single_spiele}</div>
+                    </div>
+                    <div className="bg-emerald-500/10 p-5 rounded-xl border border-emerald-500/20">
+                        <div className="text-xs text-emerald-400 uppercase tracking-wider font-bold mb-1">Gewonnen</div>
+                        <div className="text-3xl font-black text-emerald-400">{latest.wins}</div>
+                    </div>
+                    <div className="bg-slate-800/40 p-5 rounded-xl border border-white/5">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Gespielte Legs</div>
+                        <div className="text-3xl font-black text-white">{latest.gespielte_legs}</div>
                     </div>
                 </div>
             </div>

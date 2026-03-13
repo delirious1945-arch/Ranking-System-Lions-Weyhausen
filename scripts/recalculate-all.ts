@@ -28,6 +28,17 @@ async function main() {
     // Since src/lib/prisma exports a singleton, if it was already imported, 
     // it might have seen the empty env.
 
+    let config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
+    if (!config) {
+        config = {
+            weight_k1: 0.20,
+            weight_k2: 0.15,
+            weight_k3: 0.15,
+            weight_k4: 0.25,
+            weight_k5: 0.25
+        } as any;
+    }
+
     const allValues = await prisma.snapshotPlayerValue.findMany();
     console.log(`${allValues.length} Spieler-Einträge gefunden.`);
 
@@ -39,7 +50,15 @@ async function main() {
         const newK3 = scoring.calculatePointsK1toK3(v.avg_18);
         const newK4 = scoring.calculatePointsK4(v.siegequote_pct);
         const newK5 = scoring.calculatePointsK5(v.avg_high_per_leg);
-        const newTotal = newK1 + newK2 + newK3 + newK4 + newK5;
+
+        const weighted_sum =
+            (newK1 * config!.weight_k1) +
+            (newK2 * config!.weight_k2) +
+            (newK3 * config!.weight_k3) +
+            (newK4 * config!.weight_k4) +
+            (newK5 * config!.weight_k5);
+
+        const newTotal = Math.round(weighted_sum * 5 * 100) / 100;
 
         if (
             v.points_k1 !== newK1 ||

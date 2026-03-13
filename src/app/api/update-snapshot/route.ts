@@ -48,14 +48,26 @@ function parseInt2(str: string): number {
     return isNaN(n) ? 0 : n;
 }
 
+/**
+ * Groups snapshots from Friday to Thursday.
+ * Today (Friday, March 13th 2026, ISO W11) starts "Spieltag 15".
+ */
 function getWeekId(): string {
     const now = new Date();
-    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    // Move "now" forward by 3 days so that Friday (ISO Day 5) maps to Monday (ISO Day 1) of the "next" logical week calculation
+    // This effectively shifts the week-boundary from Mon->Fri.
+    const shifted = new Date(now);
+    shifted.setDate(shifted.getDate() + 3);
+
+    const d = new Date(Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    
+    // ISO W11 (shifted) yields Week 12. 12 + 3 = 15.
+    const spieltag = weekNo + 3;
+    return `Spieltag ${spieltag}`;
 }
 
 // ─── Scrape one event ─────────────────────────────────────────────
