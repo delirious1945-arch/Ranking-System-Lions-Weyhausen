@@ -43,7 +43,7 @@ export default function SnapshotSelector({ allSnapshots, currentId }: SnapshotSe
             >
                 {allSnapshots.map(s => (
                     <option key={s.snapshot_id} value={s.snapshot_id}>
-                        {s.week_id} ({new Date(s.timestamp).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })})
+                        {s.week_id}
                     </option>
                 ))}
             </select>
