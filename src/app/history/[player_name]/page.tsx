@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, Calendar } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 import PlayerManualGames from "@/components/PlayerManualGames";
-import { getPlayerSeasonMatches } from "@/lib/match-service";
 
 export default async function PlayerHistoryPage(
     props: { params: Promise<{ player_name: string }> }
@@ -16,7 +15,18 @@ export default async function PlayerHistoryPage(
         orderBy: { snapshot: { timestamp: 'asc' } }
     });
 
-    const schedule = await getPlayerSeasonMatches(decodePlayerName);
+    // Deduplicate: keep only the newest entry per week_id
+    const weekMap = new Map<string, typeof history[0]>();
+    for (const h of history) {
+        const weekId = h.snapshot.week_id;
+        const existing = weekMap.get(weekId);
+        if (!existing || new Date(h.snapshot.timestamp) > new Date(existing.snapshot.timestamp)) {
+            weekMap.set(weekId, h);
+        }
+    }
+    const dedupedHistory = Array.from(weekMap.values()).sort(
+        (a, b) => new Date(a.snapshot.timestamp).getTime() - new Date(b.snapshot.timestamp).getTime()
+    );
 
     const veto = await prisma.veto.findFirst({
         where: { player_name: decodePlayerName, active: true }
@@ -34,7 +44,7 @@ export default async function PlayerHistoryPage(
         );
     }
 
-    const latest = history[history.length - 1];
+    const latest = dedupedHistory[dedupedHistory.length - 1];
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -94,7 +104,7 @@ export default async function PlayerHistoryPage(
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
-                                {history.slice().reverse().map((h: any, i: number, arr: any[]) => {
+                                {dedupedHistory.slice().reverse().map((h: any, i: number, arr: any[]) => {
                                     const prev = arr[i + 1];
                                     const rankDelta = prev ? prev.rank - h.rank : 0;
                                     const pointsDelta = prev ? h.total_points - prev.total_points : 0;
@@ -134,59 +144,6 @@ export default async function PlayerHistoryPage(
                 </div>
             </div>
 
-            {/* Season Schedule (18 Rows) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-indigo-400" />
-                    Saison-Spielplan (Match-Details)
-                </h3>
-                <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
-                        <thead className="text-slate-500 border-b border-slate-800">
-                            <tr>
-                                <th className="pb-3 font-medium">Spieltag</th>
-                                <th className="pb-3 font-medium">Gegner</th>
-                                <th className="pb-3 font-medium text-center">Ergebnis</th>
-                                <th className="pb-3 font-medium text-right">Avg</th>
-                                <th className="pb-3 font-medium text-right">Highs (100/140/180)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/50">
-                            {schedule.map((entry) => (
-                                <tr key={entry.spieltag} className="hover:bg-slate-800/20">
-                                    <td className="py-3 font-mono text-xs text-slate-400">Spieltag {entry.spieltag}</td>
-                                    <td className="py-3">
-                                        {entry.match ? (
-                                            <span className="text-white">{entry.match.opponentName}</span>
-                                        ) : (
-                                            <span className="text-slate-600">-</span>
-                                        )}
-                                    </td>
-                                    <td className="py-3 text-center">
-                                        {entry.match ? (
-                                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${entry.match.won ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                                                {entry.match.legsWon}:{entry.match.legsLost}
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-600">-</span>
-                                        )}
-                                    </td>
-                                    <td className="py-3 text-right font-mono">
-                                        {entry.match ? entry.match.avgTotal.toFixed(2) : <span className="text-slate-600">-</span>}
-                                    </td>
-                                    <td className="py-3 text-right text-slate-400 text-xs">
-                                        {entry.match ? (
-                                            `${entry.match.count100}/${entry.match.count140}/${entry.match.count180}`
-                                        ) : (
-                                            "-"
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
             {/* Match Statistics Widget (Aggregate) */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">

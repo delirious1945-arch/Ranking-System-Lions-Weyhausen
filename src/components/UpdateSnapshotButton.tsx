@@ -32,9 +32,9 @@ export default function UpdateSnapshotButton() {
         const current = getCurrentSpieltag();
         setSelectedSpieltag(current);
         
-        // Generate Spieltag 13 up to current + 3
+        // Generate Spieltag 13 up to max 18 (season has 18 Spieltage)
         const list = [];
-        const maxSpieltag = Math.max(current + 3, 20);
+        const maxSpieltag = Math.min(Math.max(current, 18), 18);
         for (let i = 13; i <= maxSpieltag; i++) {
             list.push(i);
         }
