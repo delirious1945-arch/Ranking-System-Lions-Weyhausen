@@ -56,7 +56,7 @@ export async function POST(request: Request) {
             }
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, role: userPw.role });
     } catch (error: any) {
         console.error('Change password error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

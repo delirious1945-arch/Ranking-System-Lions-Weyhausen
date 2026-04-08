@@ -27,9 +27,13 @@ export async function POST(request: Request) {
     try {
         const { adminName, newPlayerName } = await request.json();
 
-        // Basic admin check (could be improved with real roles later)
-        if (adminName !== 'Sebastian Kirste') {
-            return NextResponse.json({ error: 'Nur der Admin kann Nutzer hinzufügen' }, { status: 403 });
+        // Check if requester is admin in DB
+        const adminUser = await (prisma as any).userPassword.findUnique({
+            where: { player_name: adminName }
+        });
+
+        if (!adminUser || adminUser.role !== 'admin') {
+            return NextResponse.json({ error: 'Nicht autorisiert. Nur Admins können Nutzer verwalten.' }, { status: 403 });
         }
 
         if (!newPlayerName || !newPlayerName.trim()) {

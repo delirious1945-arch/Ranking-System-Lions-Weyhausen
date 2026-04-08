@@ -137,7 +137,42 @@ model UserPassword {
   id              Int      @id @default(autoincrement())
   player_name     String   @unique
   password_hash   String
+  role            String   @default("viewer") // "admin", "viewer"
   must_change     Boolean  @default(true)
   created_at      DateTime @default(now())
   updated_at      DateTime @default(now()) @updatedAt
+}
+
+model MatchRecord {
+  id               Int      @id @default(autoincrement())
+  gameId           Int      @unique
+  encounterId      Int
+  eventId          Int
+  spieltag         Int
+  playerName       String
+  opponentName     String
+  date             DateTime
+  legsWon          Int
+  legsLost         Int
+  avgTotal         Float
+  dartsTotal       Int
+  scoreTotal       Int
+  avg9             Float
+  darts9           Int
+  score9           Int
+  avg18            Float
+  darts18          Int
+  score18          Int
+  count80          Int
+  count100         Int
+  count140         Int
+  count180         Int
+  checkoutMax      Int
+  won              Boolean
+  isDouble         Boolean  @default(false)
+  
+  created_at       DateTime @default(now())
+
+  @@index([playerName, spieltag])
+  @@index([eventId, spieltag])
 }

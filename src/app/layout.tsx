@@ -8,12 +8,17 @@ import CookieBanner from "@/components/CookieBanner";
 
 function getWeekId(): string {
   const now = new Date();
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const shifted = new Date(now);
+  shifted.setDate(shifted.getDate() + 3);
+
+  const d = new Date(Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  
+  const spieltag = weekNo + 3;
+  return `Spieltag ${spieltag}`;
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -89,7 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <UserBadge />
                 <div className="hide-mobile" style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  KW <code style={{ fontFamily: "monospace", color: "var(--text)", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4, fontSize: 11 }}>{weekId}</code>
+                  Aktuell: <code style={{ fontFamily: "monospace", color: "var(--text)", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: 4, fontSize: 11 }}>{weekId}</code>
                 </div>
                 <UpdateSnapshotButton />
               </div>

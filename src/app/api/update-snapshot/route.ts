@@ -1,290 +1,72 @@
 import { NextResponse } from 'next/server';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
 import { prisma } from '@/lib/prisma';
 import {
     calculatePointsK1toK3,
     calculatePointsK4,
     calculatePointsK5
 } from '@/lib/scoring';
+import { updateMatchCache, getSnapshotStats } from '@/lib/match-service';
 
-// ─── Configuration ────────────────────────────────────────────────
-interface EventConfig {
-    eventId: number;
-    includeTeams: string[];        // Include players of these teams
-    alwaysInclude: string[];       // Always include these player names
-}
+// Configuration and Helpers moved to match-service or scoring
 
-const EVENTS: EventConfig[] = [
-    {
-        eventId: 247,
-        includeTeams: ['Lions Weyhausen A'],
-        alwaysInclude: [],
-    },
-    {
-        eventId: 251,
-        includeTeams: ['Lions Weyhausen B'],
-        alwaysInclude: [],
-    },
-    {
-        eventId: 239,
-        includeTeams: [],
-        alwaysInclude: ['Jens Goltermann'],
-    },
-];
-
-const BASE = 'https://2k-dart-software.com/frontend/events/10/event';
-
-// ─── Helpers ───────────────────────────────────────────────────────
-function parseFloat2(str: string): number {
-    if (!str || str.trim() === '' || str.trim() === '-') return 0;
-    const n = parseFloat(str.replace(/[Øø ]/g, '').replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-}
-
-function parseInt2(str: string): number {
-    if (!str || str.trim() === '' || str.trim() === '-') return 0;
-    const n = parseInt(str.replace(/[+]/g, ''), 10);
-    return isNaN(n) ? 0 : n;
-}
-
-/**
- * Groups snapshots from Friday to Thursday.
- * Today (Friday, March 13th 2026, ISO W11) starts "Spieltag 15".
- */
+// ─── Shared getWeekId logic ───
 function getWeekId(): string {
     const now = new Date();
-    // Move "now" forward by 3 days so that Friday (ISO Day 5) maps to Monday (ISO Day 1) of the "next" logical week calculation
-    // This effectively shifts the week-boundary from Mon->Fri.
     const shifted = new Date(now);
     shifted.setDate(shifted.getDate() + 3);
-
     const d = new Date(Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    
-    // ISO W11 (shifted) yields Week 12. 12 + 3 = 15.
     const spieltag = weekNo + 3;
     return `Spieltag ${spieltag}`;
 }
 
-// ─── Scrape one event ─────────────────────────────────────────────
-interface ScrapedPlayer {
-    player_name: string;
-    verein: string;
-    avg_total: number;
-    avg_9: number;
-    avg_18: number;
-    cnt_180: number;
-    cnt_140: number;
-    cnt_100: number;
-    cnt_80: number;
-    gespielte_single_spiele: number;
-    wins: number;
-    legs_won: number;
-    legs_lost: number;
-}
+export async function POST(req?: Request) {
+    let targetWeekId: string | null = null;
 
-async function scrapeEvent(page: any, eventId: number, config: EventConfig): Promise<ScrapedPlayer[]> {
-    const baseUrl = `${BASE}/${eventId}`;
-
-    // 1. Stats page
-    await page.goto(`${baseUrl}/statistics/statistics`, { waitUntil: 'networkidle0', timeout: 30000 });
-    await page.waitForSelector('p-table tbody tr', { timeout: 20000 });
-
-    const statsRows = await page.evaluate(() =>
-        Array.from(document.querySelectorAll('p-table tbody tr')).map(tr =>
-            Array.from(tr.querySelectorAll('td')).map(td => (td as HTMLElement).innerText?.trim() ?? '')
-        )
-    );
-
-    const statsMap = new Map<string, {
-        avg_total: number; avg_9: number; avg_18: number;
-        cnt_180: number; cnt_140: number; cnt_100: number; cnt_80: number;
-    }>();
-
-    for (const row of statsRows) {
-        const name = row[1]?.trim();
-        if (!name || name.includes('&')) continue; // skip Doppel entries
-        statsMap.set(name, {
-            avg_total: parseFloat2(row[2]),
-            cnt_180: parseInt2(row[5]),
-            cnt_140: parseInt2(row[6]),
-            cnt_100: parseInt2(row[7]),
-            cnt_80: parseInt2(row[8]),
-            avg_9: parseFloat2(row[9]),
-            avg_18: parseFloat2(row[12]),
-        });
+    if (req) {
+        try {
+            const body = await req.json();
+            if (body?.targetWeekId) {
+                targetWeekId = body.targetWeekId;
+            }
+        } catch (e) {
+            // ignore
+        }
     }
-
-    // 2. Bilanz page (team name + Spiele/Legs)
-    await page.goto(`${baseUrl}/statistics/player/results`, { waitUntil: 'networkidle0', timeout: 30000 });
-    await page.waitForSelector('p-table tbody tr', { timeout: 20000 });
-
-    const bilanzRows = await page.evaluate(() =>
-        Array.from(document.querySelectorAll('p-table tbody tr')).map(tr =>
-            Array.from(tr.querySelectorAll('td')).map(td => (td as HTMLElement).innerText?.trim() ?? '')
-        )
-    );
-
-    const players: ScrapedPlayer[] = [];
-
-    for (const row of bilanzRows) {
-        const name = row[1]?.trim();
-        const verein = row[2]?.trim();
-        if (!name || !verein) continue;
-
-        const isTargetTeam = config.includeTeams.includes(verein);
-        const isAlwaysInclude = config.alwaysInclude.includes(name);
-        if (!isTargetTeam && !isAlwaysInclude) continue;
-
-        const stats = statsMap.get(name);
-        const wins = parseInt2(row[4]);
-        const losses = parseInt2(row[6]);
-        const legs_won = parseInt2(row[10]);
-        const legs_lost = parseInt2(row[12]);
-
-        players.push({
-            player_name: name,
-            verein,
-            avg_total: stats?.avg_total ?? 0,
-            avg_9: stats?.avg_9 ?? 0,
-            avg_18: stats?.avg_18 ?? 0,
-            cnt_180: stats?.cnt_180 ?? 0,
-            cnt_140: stats?.cnt_140 ?? 0,
-            cnt_100: stats?.cnt_100 ?? 0,
-            cnt_80: stats?.cnt_80 ?? 0,
-            gespielte_single_spiele: wins + losses,
-            wins,
-            legs_won,
-            legs_lost,
-        });
-    }
-
-    console.log(`[Event ${eventId}] Found ${players.length} eligible players`);
-    return players;
-}
-
-// ─── Route Handler ────────────────────────────────────────────────
-export async function POST() {
-    let browser: any | undefined;
 
     try {
-        const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+        // 1. Update Match Cache from 2k-dart-software API
+        await updateMatchCache();
 
-        if (isProd) {
-            // Vercel / Production launch
-            const chromiumAny = chromium as any;
-            browser = await puppeteer.launch({
-                args: chromiumAny.args,
-                defaultViewport: chromiumAny.defaultViewport,
-                executablePath: await chromiumAny.executablePath(),
-                headless: chromiumAny.headless,
-            });
-        } else {
-            // Local fallback (requires full puppeteer installed)
-            const localPuppeteer = require('puppeteer');
-            browser = await localPuppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-            });
-        }
+        // 2. Aggregate all matches (including future ones per user request)
+        const allScrapedRaw = await getSnapshotStats();
 
-        const page = await browser.newPage();
-        await page.setDefaultTimeout(60000);
+        const currentWeekId = targetWeekId || getWeekId();
 
-        // Scrape all events
-        const allScrapedRaw: ScrapedPlayer[] = [];
-
-        for (const eventConfig of EVENTS) {
-            const players = await scrapeEvent(page, eventConfig.eventId, eventConfig);
-            allScrapedRaw.push(...players);
-        }
-
-        await browser.close();
-        browser = undefined;
-
-        // --- Fetch Manual Games ---
-        // Calculate current week ID
-        const now = new Date();
-        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-        const currentWeekId = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
-
+        // 3. Fetch Manual Games for this week
         const manualGames = await prisma.manualGame.findMany({
             where: { week_id: currentWeekId }
         });
 
-        console.log(`[update-snapshot] Found ${manualGames.length} manual games for ${currentWeekId}`);
+        console.log(`[update-snapshot] Total players from API: ${allScrapedRaw.length}`);
 
-        console.log(`[update-snapshot] Total raw players collected: ${allScrapedRaw.length}`);
-
-        // --- Aggregation Logic ---
-        // If a player is in multiple events, we sum their counts and weight their averages.
-        const aggregatedMap = new Map<string, {
-            player_name: string;
-            verein: string;
-            wins: number;
-            legs_won: number;
-            legs_lost: number;
-            gespielte_single_spiele: number;
-            cnt_80: number;
-            cnt_100: number;
-            cnt_140: number;
-            cnt_180: number;
-            weighted_avg_total: number;
-            weighted_avg_9: number;
-            weighted_avg_18: number;
-            total_legs_for_avg: number;
-        }>();
+        // --- Aggregation & Manual Games Merge ---
+        const aggregatedMap = new Map<string, any>();
 
         for (const p of allScrapedRaw) {
-            const existing = aggregatedMap.get(p.player_name);
-            const currentLegs = p.legs_won + p.legs_lost;
-
-            if (existing) {
-                existing.wins += p.wins;
-                existing.legs_won += p.legs_won;
-                existing.legs_lost += p.legs_lost;
-                existing.gespielte_single_spiele += p.gespielte_single_spiele;
-                existing.cnt_80 += p.cnt_80;
-                existing.cnt_100 += p.cnt_100;
-                existing.cnt_140 += p.cnt_140;
-                existing.cnt_180 += p.cnt_180;
-
-                // Average weighting
-                existing.weighted_avg_total += (p.avg_total * currentLegs);
-                existing.weighted_avg_9 += (p.avg_9 * currentLegs);
-                existing.weighted_avg_18 += (p.avg_18 * currentLegs);
-                existing.total_legs_for_avg += currentLegs;
-
-                // Keep the primary team name (e.g., Lions A preferred over Jens Liga)
-                if (p.verein.includes('Lions')) {
-                    existing.verein = p.verein;
-                }
-            } else {
-                aggregatedMap.set(p.player_name, {
-                    player_name: p.player_name,
-                    verein: p.verein,
-                    wins: p.wins,
-                    legs_won: p.legs_won,
-                    legs_lost: p.legs_lost,
-                    gespielte_single_spiele: p.gespielte_single_spiele,
-                    cnt_80: p.cnt_80,
-                    cnt_100: p.cnt_100,
-                    cnt_140: p.cnt_140,
-                    cnt_180: p.cnt_180,
-                    weighted_avg_total: p.avg_total * currentLegs,
-                    weighted_avg_9: p.avg_9 * currentLegs,
-                    weighted_avg_18: p.avg_18 * currentLegs,
-                    total_legs_for_avg: currentLegs,
-                });
-            }
+            const playerInfo = await prisma.player.findUnique({ where: { player_name: p.player_name } });
+            
+            aggregatedMap.set(p.player_name, {
+                ...p,
+                verein: playerInfo?.verein || "Lions Weyhausen",
+                weighted_avg_total: p.avg_total * p.gespielte_legs,
+                weighted_avg_9: p.avg_9 * p.gespielte_legs,
+                weighted_avg_18: p.avg_18 * p.gespielte_legs,
+                total_legs_for_avg: p.gespielte_legs,
+            });
         }
 
         // --- Merge Manual Games ---
@@ -300,8 +82,7 @@ export async function POST() {
 
             if (existing) {
                 existing.wins += mgWins;
-                existing.legs_won += halfLegs;
-                existing.legs_lost += halfLegs;
+                existing.legs_won += halfLegs; // approximation
                 existing.gespielte_single_spiele += 2;
                 existing.cnt_80 += mg.cnt_80;
                 existing.cnt_100 += mg.cnt_100;
@@ -311,13 +92,14 @@ export async function POST() {
                 existing.weighted_avg_9 += mgWeighted9;
                 existing.weighted_avg_18 += mgWeighted18;
                 existing.total_legs_for_avg += mgLegs;
+                existing.gespielte_legs += mgLegs;
+                existing.sum_high_scores += (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180);
             } else {
                 aggregatedMap.set(mg.player_name, {
                     player_name: mg.player_name,
                     verein: "Lions Weyhausen",
                     wins: mgWins,
                     legs_won: halfLegs,
-                    legs_lost: halfLegs,
                     gespielte_single_spiele: 2,
                     cnt_80: mg.cnt_80,
                     cnt_100: mg.cnt_100,
@@ -327,6 +109,8 @@ export async function POST() {
                     weighted_avg_9: mgWeighted9,
                     weighted_avg_18: mgWeighted18,
                     total_legs_for_avg: mgLegs,
+                    gespielte_legs: mgLegs,
+                    sum_high_scores: (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180),
                 });
             }
         }
@@ -504,7 +288,6 @@ export async function POST() {
 
     } catch (error) {
         console.error('[update-snapshot] Error:', error);
-        if (browser) await browser.close();
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
     }
 }

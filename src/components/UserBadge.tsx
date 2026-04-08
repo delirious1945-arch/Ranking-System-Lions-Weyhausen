@@ -15,6 +15,7 @@ function validatePassword(pw: string) {
 
 export default function UserBadge() {
     const [name, setName] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPwModalOpen, setIsPwModalOpen] = useState(false);
     const [allowedNames, setAllowedNames] = useState<string[]>([]);
@@ -35,6 +36,9 @@ export default function UserBadge() {
         const stored = localStorage.getItem('lions-auth-name');
         if (stored) setName(stored);
 
+        const role = localStorage.getItem('lions-auth-role');
+        if (role === 'admin') setIsAdmin(true);
+
         const loadUsers = async () => {
             try {
                 const res = await fetch('/api/auth/users');
@@ -51,6 +55,7 @@ export default function UserBadge() {
 
     const handleLogout = () => {
         localStorage.removeItem('lions-auth-name');
+        localStorage.removeItem('lions-auth-role');
         window.location.reload();
     };
 
@@ -149,7 +154,6 @@ export default function UserBadge() {
 
     if (!name) return null;
 
-    const isAdmin = name === 'Sebastian Kirste';
     const pwVal = validatePassword(newPw);
     const inputStyle: React.CSSProperties = {
         background: '#0b0d11', border: '1px solid rgba(255,255,255,0.1)',

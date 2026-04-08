@@ -1,17 +1,33 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-    { href: "/", label: "Dashboard" },
-    { href: "/admin?secret=dev-lions-2026", label: "Admin" },
+    { href: "/", label: "Dashboard" }
 ];
 
 export default function NavLinks() {
     const path = usePathname();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const role = localStorage.getItem('lions-auth-role');
+        const name = localStorage.getItem('lions-auth-name');
+        
+        if (role === 'admin' && name === 'Sebastian Kirste') {
+            setIsAdmin(true);
+        }
+    }, [path]); // Re-eval on path changes to catch login events if they happened to navigate
+
+    const items = [...NAV_ITEMS];
+    if (isAdmin) {
+        items.push({ href: "/admin", label: "Admin" });
+    }
+
     return (
         <nav style={{ display: "flex", gap: 4 }}>
-            {NAV_ITEMS.map(({ href, label }) => {
+            {items.map(({ href, label }) => {
                 const active = path === href || (href.startsWith("/admin") && path === "/admin");
                 return (
                     <Link key={href} href={href} style={{

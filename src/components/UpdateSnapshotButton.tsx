@@ -1,24 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+function getCurrentSpieltag() {
+    const now = new Date();
+    const shifted = new Date(now);
+    shifted.setDate(shifted.getDate() + 3);
+
+    const d = new Date(Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return weekNo + 3;
+}
 
 export default function UpdateSnapshotButton() {
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState<string>("");
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [selectedSpieltag, setSelectedSpieltag] = useState<number>(15); // Fallback
+    const [availableSpieltage, setAvailableSpieltage] = useState<number[]>([]);
     const router = useRouter();
+
+    useEffect(() => {
+        const role = localStorage.getItem('lions-auth-role');
+        if (role === 'admin') {
+            setIsAdmin(true);
+        }
+        const current = getCurrentSpieltag();
+        setSelectedSpieltag(current);
+        
+        // Generate Spieltag 13 up to current + 3
+        const list = [];
+        const maxSpieltag = Math.max(current + 3, 20);
+        for (let i = 13; i <= maxSpieltag; i++) {
+            list.push(i);
+        }
+        setAvailableSpieltage(list);
+    }, []);
 
     const handleUpdate = async () => {
         setStatus("loading");
         setMessage("");
 
         try {
-            const res = await fetch("/api/update-snapshot", { method: "POST" });
+            const res = await fetch("/api/update-snapshot", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetWeekId: `Spieltag ${selectedSpieltag}` })
+            });
             const data = await res.json();
 
             if (data.success) {
                 setStatus("success");
-                setMessage(`${data.players_saved} Spieler geladen`);
+                setMessage(`Speichern in Spieltag ${selectedSpieltag} OK`);
                 setTimeout(() => {
                     router.refresh();
                     setStatus("idle");
@@ -36,18 +73,43 @@ export default function UpdateSnapshotButton() {
         }
     };
 
+    if (!isAdmin || typeof window !== 'undefined' && localStorage.getItem('lions-auth-name') !== 'Sebastian Kirste') return null;
+
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {message && (
                 <span style={{
                     fontSize: "12px",
                     color: status === "success" ? "var(--green)" : "var(--red)",
                     background: status === "success" ? "var(--green-muted)" : "var(--red-muted)",
-                    padding: "4px 10px", borderRadius: "6px"
+                    padding: "4px 10px", borderRadius: "6px", whiteSpace: "nowrap"
                 }}>
                     {message}
                 </span>
             )}
+            
+            <select 
+                value={selectedSpieltag} 
+                onChange={(e) => setSelectedSpieltag(Number(e.target.value))}
+                disabled={status === "loading"}
+                style={{
+                    padding: "7px 10px",
+                    background: "rgba(255,255,255,0.05)",
+                    color: "var(--text)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    outline: "none",
+                    cursor: "pointer"
+                }}
+            >
+                {availableSpieltage.map(s => (
+                    <option key={s} value={s} style={{ background: "#13161e" }}>
+                        Spieltag {s}
+                    </option>
+                ))}
+            </select>
+
             <button
                 onClick={handleUpdate}
                 disabled={status === "loading"}
@@ -65,7 +127,8 @@ export default function UpdateSnapshotButton() {
                     borderRadius: "8px", fontSize: "13px", fontWeight: 600,
                     cursor: status === "loading" ? "not-allowed" : "pointer",
                     opacity: status === "loading" ? 0.6 : 1,
-                    transition: "all 0.2s"
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap"
                 }}
             >
                 {status === "loading" ? (

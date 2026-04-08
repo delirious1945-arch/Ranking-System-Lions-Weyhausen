@@ -8,3 +8,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Trigger Next.js Dev Server Hard Reload for Prisma Schema update
