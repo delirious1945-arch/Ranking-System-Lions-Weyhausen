@@ -66,6 +66,7 @@ export interface PlayerRawData {
   cnt_100: number;
   cnt_140: number;
   cnt_180: number;
+  is_offline?: boolean;
 }
 
 export interface PlayerComputedData extends PlayerRawData {
@@ -110,35 +111,38 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
 
   const sum_high_scores = cnt_80 + cnt_100 + cnt_140 + cnt_180;
 
-  let avg_high_per_leg = 0;
-  if (totalLegs === 0) {
-    if (sum_high_scores > 0) {
-      throw new Error("0 legs played but high scores exist");
-    }
-  } else {
-    avg_high_per_leg = sum_high_scores / totalLegs;
-    // Round to 2 decimal places as per requirement
-    avg_high_per_leg = Math.round(avg_high_per_leg * 100) / 100;
+  let siegequote_pct = 0;
+  if (totalGamesPlayed > 0) {
+    siegequote_pct = (totalWins / totalGamesPlayed) * 100;
+    siegequote_pct = Math.round(siegequote_pct * 100) / 100;
   }
 
+  // Averages for K1, K2, K3
   let avg_total = 0;
   let avg_9 = 0;
   let avg_18 = 0;
 
-  if (totalSingleSpiele > 0) {
-    avg_total = records.reduce((sum, r) => sum + (r.avg_total * r.gespielte_single_spiele), 0) / totalSingleSpiele;
-    avg_9 = records.reduce((sum, r) => sum + (r.avg_9 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
-    avg_18 = records.reduce((sum, r) => sum + (r.avg_18 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
+  const recordsWithAvg = records.filter(r => !r.is_offline);
+  const totalSingleSpieleWithAvg = recordsWithAvg.reduce((sum, r) => sum + r.gespielte_single_spiele, 0);
+
+  if (totalSingleSpieleWithAvg > 0) {
+    avg_total = recordsWithAvg.reduce((sum, r) => sum + (r.avg_total * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
+    avg_9 = recordsWithAvg.reduce((sum, r) => sum + (r.avg_9 * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
+    avg_18 = recordsWithAvg.reduce((sum, r) => sum + (r.avg_18 * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
 
     avg_total = Math.round(avg_total * 100) / 100;
     avg_9 = Math.round(avg_9 * 100) / 100;
     avg_18 = Math.round(avg_18 * 100) / 100;
   }
 
-  let siegequote_pct = 0;
-  if (totalGamesPlayed > 0) {
-    siegequote_pct = (totalWins / totalGamesPlayed) * 100;
-    siegequote_pct = Math.round(siegequote_pct * 100) / 100;
+  // Avg High per Leg (K5)
+  let avg_high_per_leg = 0;
+  const totalLegsWithStats = recordsWithAvg.reduce((sum, r) => sum + r.gespielte_legs, 0);
+  const sumHighScoresWithStats = recordsWithAvg.reduce((sum, r) => sum + (r.cnt_80 + r.cnt_100 + r.cnt_140 + r.cnt_180), 0);
+
+  if (totalLegsWithStats > 0) {
+    avg_high_per_leg = sumHighScoresWithStats / totalLegsWithStats;
+    avg_high_per_leg = Math.round(avg_high_per_leg * 100) / 100;
   }
 
   // Calculate Points

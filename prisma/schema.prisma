@@ -129,6 +129,9 @@ model ManualGame {
   cnt_140         Int
   cnt_180         Int
   legs_total      Int
+  is_offline      Boolean  @default(false)
+  legs_won        Int      @default(0)
+  legs_lost       Int      @default(0)
   created_at      DateTime @default(now())
   week_id         String?
 }

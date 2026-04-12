@@ -72,45 +72,55 @@ export async function POST(req?: Request) {
         // --- Merge Manual Games ---
         for (const mg of manualGames) {
             const existing = aggregatedMap.get(mg.player_name);
-            const mgLegs = mg.legs_total;
+            const isOffline = !!mg.is_offline;
+            
+            // For offline matches, we use the actual reported score (legs_won/lost)
+            // For standard matches, we still use the legs_total logic
+            const mgLegs = isOffline ? (mg.legs_won + mg.legs_lost) : mg.legs_total;
             const halfLegs = mgLegs / 2;
-            const mgWins = (mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0);
-
-            const mgWeightedTotal = (mg.game1_avg * halfLegs) + (mg.game2_avg * halfLegs);
-            const mgWeighted9 = (mg.game1_avg_9 * halfLegs) + (mg.game2_avg_9 * halfLegs);
-            const mgWeighted18 = (mg.game1_avg_18 * halfLegs) + (mg.game2_avg_18 * halfLegs);
+            const mgWins = isOffline ? (mg.legs_won > mg.legs_lost ? 1 : 0) : ((mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0));
+            const mgWinsCount = isOffline ? (mg.legs_won > mg.legs_lost ? 1 : 0) : ((mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0));
+            const mgGamesCount = isOffline ? 1 : 2;
 
             if (existing) {
-                existing.wins += mgWins;
-                existing.legs_won += halfLegs; // approximation
-                existing.gespielte_single_spiele += 2;
-                existing.cnt_80 += mg.cnt_80;
-                existing.cnt_100 += mg.cnt_100;
-                existing.cnt_140 += mg.cnt_140;
-                existing.cnt_180 += mg.cnt_180;
-                existing.weighted_avg_total += mgWeightedTotal;
-                existing.weighted_avg_9 += mgWeighted9;
-                existing.weighted_avg_18 += mgWeighted18;
-                existing.total_legs_for_avg += mgLegs;
+                existing.wins += mgWinsCount;
+                existing.legs_won += isOffline ? mg.legs_won : halfLegs;
+                existing.gespielte_single_spiele += mgGamesCount;
                 existing.gespielte_legs += mgLegs;
-                existing.sum_high_scores += (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180);
+                
+                if (!isOffline) {
+                    const mgWeightedTotal = (mg.game1_avg * halfLegs) + (mg.game2_avg * halfLegs);
+                    const mgWeighted9 = (mg.game1_avg_9 * halfLegs) + (mg.game2_avg_9 * halfLegs);
+                    const mgWeighted18 = (mg.game1_avg_18 * halfLegs) + (mg.game2_avg_18 * halfLegs);
+                    
+                    existing.cnt_80 += mg.cnt_80;
+                    existing.cnt_100 += mg.cnt_100;
+                    existing.cnt_140 += mg.cnt_140;
+                    existing.cnt_180 += mg.cnt_180;
+                    existing.weighted_avg_total += mgWeightedTotal;
+                    existing.weighted_avg_9 += mgWeighted9;
+                    existing.weighted_avg_18 += mgWeighted18;
+                    existing.total_legs_for_avg += mgLegs;
+                    existing.sum_high_scores += (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180);
+                }
             } else {
                 aggregatedMap.set(mg.player_name, {
                     player_name: mg.player_name,
                     verein: "Lions Weyhausen",
-                    wins: mgWins,
-                    legs_won: halfLegs,
-                    gespielte_single_spiele: 2,
-                    cnt_80: mg.cnt_80,
-                    cnt_100: mg.cnt_100,
-                    cnt_140: mg.cnt_140,
-                    cnt_180: mg.cnt_180,
-                    weighted_avg_total: mgWeightedTotal,
-                    weighted_avg_9: mgWeighted9,
-                    weighted_avg_18: mgWeighted18,
-                    total_legs_for_avg: mgLegs,
+                    wins: mgWinsCount,
+                    legs_won: isOffline ? mg.legs_won : halfLegs,
+                    gespielte_single_spiele: mgGamesCount,
                     gespielte_legs: mgLegs,
-                    sum_high_scores: (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180),
+                    // If offline, these start at 0 and stay there
+                    weighted_avg_total: isOffline ? 0 : ((mg.game1_avg * halfLegs) + (mg.game2_avg * halfLegs)),
+                    weighted_avg_9: isOffline ? 0 : ((mg.game1_avg_9 * halfLegs) + (mg.game2_avg_9 * halfLegs)),
+                    weighted_avg_18: isOffline ? 0 : ((mg.game1_avg_18 * halfLegs) + (mg.game2_avg_18 * halfLegs)),
+                    total_legs_for_avg: isOffline ? 0 : mgLegs,
+                    cnt_80: isOffline ? 0 : mg.cnt_80,
+                    cnt_100: isOffline ? 0 : mg.cnt_100,
+                    cnt_140: isOffline ? 0 : mg.cnt_140,
+                    cnt_180: isOffline ? 0 : mg.cnt_180,
+                    sum_high_scores: isOffline ? 0 : (mg.cnt_80 * 80 + mg.cnt_100 * 100 + mg.cnt_140 * 140 + mg.cnt_180 * 180),
                 });
             }
         }
