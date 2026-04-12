@@ -9,11 +9,20 @@ const EVENTS = [
 export async function updateMatchCache() {
     console.log("[MatchService] Updating match cache...");
     
+    // Pre-fetch all existing gameIds to speed up checks
+    const existingGameIds = new Set((await prisma.matchRecord.findMany({
+        select: { gameId: true }
+    })).map(r => r.gameId));
+
     for (const config of EVENTS) {
         try {
+            console.log(`[MatchService] Processing event: ${config.name} (${config.eventId})`);
             const url = `https://backend-ddv.3k-darts.com/2k-backend-ddv/api/v1/frontend/event/${config.eventId}/phase/${config.phaseId}/round/0`;
             const res = await fetch(url);
-            if (!res.ok) continue;
+            if (!res.ok) {
+                console.warn(`[MatchService] Failed to fetch event ${config.eventId}: ${res.statusText}`);
+                continue;
+            }
             const data = await res.json();
             if (!data.matches) continue;
 
@@ -22,10 +31,14 @@ export async function updateMatchCache() {
                 (
                     (m.participantHome?.displayName || "").includes("Weyhausen") || 
                     (m.participantGuest?.displayName || "").includes("Weyhausen") ||
+                    (m.participantHome?.displayName || "").includes("Wettmershagen") || 
+                    (m.participantGuest?.displayName || "").includes("Wettmershagen") ||
                     (m.participantHome?.displayName || "").includes("Goltermann") ||
                     (m.participantGuest?.displayName || "").includes("Goltermann")
                 )
             );
+
+            console.log(`[MatchService] Found ${targetMatches.length} matching encounters for ${config.name}`);
 
             for (const match of targetMatches) {
                 const encounterId = match.id;
@@ -41,8 +54,8 @@ export async function updateMatchCache() {
                 for (const game of games) {
                     if (game.statusCd !== 'FINISH') continue;
                     const gameId = game.id;
-                    const existing = await prisma.matchRecord.findUnique({ where: { gameId } });
-                    if (existing) continue;
+                    
+                    if (existingGameIds.has(gameId)) continue;
 
                     const statsUrl = `https://backend-ddv.3k-darts.com/2k-backend-ddv/api/v1/frontend/event/${config.eventId}/match/${gameId}/statistics`;
                     const statsRes = await fetch(statsUrl);
@@ -53,11 +66,16 @@ export async function updateMatchCache() {
                     
                     for (const summary of matchSummaries) {
                         const name = summary.displayName;
-                        const isTarget = name.includes("Weyhausen") || name.includes("Goltermann") || 
-                                       (summary.participant?.displayName || "").includes("Weyhausen") ||
-                                       (summary.participant?.displayName || "").includes("Goltermann");
+                        const teamName = (summary.participant?.displayName || "");
                         
-                        if (!isTarget) continue;
+                        // Strict filter: Weyhausen players OR Jens Goltermann
+                        const isWeyhausen = name.includes("Weyhausen") || teamName.includes("Weyhausen");
+                        const isJens = name.includes("Jens Goltermann") || name.includes("Goltermann");
+                        
+                        if (!isWeyhausen && !isJens) continue;
+                        
+                        // If it's a Wettmershagen match, ONLY allow Jens
+                        if (teamName.includes("Wettmershagen") && !isJens) continue;
 
                         const opponent = matchSummaries.find((s: any) => s.displayName !== name);
 
@@ -90,6 +108,8 @@ export async function updateMatchCache() {
                                 isDouble: name.includes("&")
                             }
                         });
+                        console.log(`[MatchService] Saved match record for ${name} (Game ${gameId})`);
+                        existingGameIds.add(gameId);
                     }
                 }
             }
@@ -98,6 +118,7 @@ export async function updateMatchCache() {
         }
     }
 }
+
 
 export async function getSnapshotStats(upToSpieltag?: number) {
     // Collect all played matches.

@@ -38,11 +38,20 @@ export async function POST(req?: Request) {
     }
 
     try {
-        // 1. Update Match Cache from 2k-dart-software API
-        await updateMatchCache();
+        // 1. Optional: Update Match Cache from 2k-dart-software API
+        // We only do this if explicitly requested or if it's likely to be fast.
+        // For the two-step process, we prefer calling /api/sync-matches separately.
+        const url = new URL(req?.url || "");
+        const shouldSync = url.searchParams.get("sync") === "true";
+        
+        if (shouldSync) {
+            console.log("[update-snapshot] Syncing match cache as requested...");
+            await updateMatchCache();
+        }
 
-        // 2. Aggregate all matches (including future ones per user request)
+        // 2. Aggregate all matches from current DB state
         const allScrapedRaw = await getSnapshotStats();
+
 
         const currentWeekId = targetWeekId || getWeekId();
 
