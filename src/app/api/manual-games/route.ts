@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const games = await prisma.manualGame.findMany({
             orderBy: { date: 'desc' },
-            take: 20,
+            take: 200,
         });
 
         return NextResponse.json(games);

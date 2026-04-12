@@ -21,6 +21,9 @@ interface ManualGame {
     cnt_140: number;
     cnt_180: number;
     legs_total: number;
+    is_offline?: boolean;
+    legs_won?: number;
+    legs_lost?: number;
     week_id: string;
 }
 
@@ -96,7 +99,23 @@ export default function PlayerManualGames({ playerName }: Props) {
     };
 
     if (loading) return null;
-    if (games.length === 0) return null;
+    
+    // Don't hide completely if no games, but keep it clean
+    if (games.length === 0) {
+        return (
+            <div style={{
+                background: 'rgba(15, 23, 42, 0.4)',
+                border: '1px solid rgba(56, 189, 248, 0.1)',
+                borderRadius: '16px',
+                padding: '24px',
+                textAlign: 'center',
+                color: '#64748b',
+                fontSize: '13px'
+            }}>
+                Keine manuell erfassten Spiele für diesen Spieler gefunden.
+            </div>
+        );
+    }
 
     const inputStyle = {
         background: '#0b0d11', border: '1px solid rgba(255,255,255,0.1)',
@@ -144,8 +163,12 @@ export default function PlayerManualGames({ playerName }: Props) {
                             <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.15)' }}>
                                 <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Datum</th>
                                 <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Begegnung</th>
-                                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#fbbf24', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Spiel 1</th>
-                                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#38bdf8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Spiel 2</th>
+                                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#fbbf24', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {games.some(g => g.is_offline) ? 'Ergebnis / Stats' : 'Spiel 1'}
+                                </th>
+                                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: '#38bdf8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {games.some(g => g.is_offline) ? 'Details' : 'Spiel 2'}
+                                </th>
                                 <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>High-Scores</th>
                                 <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#94a3b8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Legs</th>
                                 {isAdmin && (
@@ -165,44 +188,70 @@ export default function PlayerManualGames({ playerName }: Props) {
                                         <td style={{ padding: '10px 12px', color: '#94a3b8', fontFamily: 'monospace', fontSize: 12 }}>{dateStr}</td>
                                         <td style={{ padding: '10px 12px', color: '#cbd5e1' }}>{g.begegnung || '—'}</td>
                                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                                                <span style={{
-                                                    fontWeight: 700,
-                                                    color: g.game1_win ? '#22c55e' : '#ef4444',
-                                                    background: g.game1_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                    padding: '3px 10px',
-                                                    borderRadius: 8,
-                                                    fontSize: 12,
-                                                }}>
-                                                    {g.game1_avg.toFixed(1)} {g.game1_win ? '✓' : '✗'}
-                                                </span>
-                                                {(g.game1_avg_9 > 0 || g.game1_avg_18 > 0) && (
-                                                    <span style={{ fontSize: 10, color: '#64748b' }}>
-                                                        {g.game1_avg_9 > 0 && `9: ${g.game1_avg_9.toFixed(1)} `}
-                                                        {g.game1_avg_18 > 0 && `| 18: ${g.game1_avg_18.toFixed(1)}`}
+                                            {g.is_offline ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                                    <span style={{
+                                                        background: 'rgba(249, 115, 22, 0.1)',
+                                                        color: '#f97316',
+                                                        fontSize: '10px',
+                                                        fontWeight: 900,
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        border: '1px solid rgba(249, 115, 22, 0.2)'
+                                                    }}>OFFLINE</span>
+                                                    <span style={{ fontSize: '16px', fontWeight: 900, color: '#fff' }}>
+                                                        {g.legs_won} : {g.legs_lost}
                                                     </span>
-                                                )}
-                                            </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                                    <span style={{
+                                                        fontWeight: 700,
+                                                        color: g.game1_win ? '#22c55e' : '#ef4444',
+                                                        background: g.game1_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                        padding: '3px 10px',
+                                                        borderRadius: 8,
+                                                        fontSize: 12,
+                                                    }}>
+                                                        {g.game1_avg.toFixed(1)} {g.game1_win ? '✓' : '✗'}
+                                                    </span>
+                                                    {(g.game1_avg_9 > 0 || g.game1_avg_18 > 0) && (
+                                                        <span style={{ fontSize: 10, color: '#64748b' }}>
+                                                            {g.game1_avg_9 > 0 && `9: ${g.game1_avg_9.toFixed(1)} `}
+                                                            {g.game1_avg_18 > 0 && `| 18: ${g.game1_avg_18.toFixed(1)}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                                                <span style={{
-                                                    fontWeight: 700,
-                                                    color: g.game2_win ? '#22c55e' : '#ef4444',
-                                                    background: g.game2_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                    padding: '3px 10px',
-                                                    borderRadius: 8,
-                                                    fontSize: 12,
+                                            {g.is_offline ? (
+                                                <span style={{ 
+                                                    color: g.legs_won! > g.legs_lost! ? '#22c55e' : '#ef4444',
+                                                    fontWeight: 800, fontSize: '12px'
                                                 }}>
-                                                    {g.game2_avg.toFixed(1)} {g.game2_win ? '✓' : '✗'}
+                                                    {g.legs_won! > g.legs_lost! ? '✓ SIEG' : '✗ NIEDERLAGE'}
                                                 </span>
-                                                {(g.game2_avg_9 > 0 || g.game2_avg_18 > 0) && (
-                                                    <span style={{ fontSize: 10, color: '#64748b' }}>
-                                                        {g.game2_avg_9 > 0 && `9: ${g.game2_avg_9.toFixed(1)} `}
-                                                        {g.game2_avg_18 > 0 && `| 18: ${g.game2_avg_18.toFixed(1)}`}
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                                    <span style={{
+                                                        fontWeight: 700,
+                                                        color: g.game2_win ? '#22c55e' : '#ef4444',
+                                                        background: g.game2_win ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                        padding: '3px 10px',
+                                                        borderRadius: 8,
+                                                        fontSize: 12,
+                                                    }}>
+                                                        {g.game2_avg.toFixed(1)} {g.game2_win ? '✓' : '✗'}
                                                     </span>
-                                                )}
-                                            </div>
+                                                    {(g.game2_avg_9 > 0 || g.game2_avg_18 > 0) && (
+                                                        <span style={{ fontSize: 10, color: '#64748b' }}>
+                                                            {g.game2_avg_9 > 0 && `9: ${g.game2_avg_9.toFixed(1)} `}
+                                                            {g.game2_avg_18 > 0 && `| 18: ${g.game2_avg_18.toFixed(1)}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontSize: 11 }}>
                                             {highTotal > 0 ? (
