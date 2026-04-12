@@ -1,3 +1,5 @@
+import { DEFAULT_WEIGHTS } from "./lions-config";
+
 export function validateValue(value: number, min: number, max: number): boolean {
   return value >= min && value <= max;
 }
@@ -82,7 +84,25 @@ export interface PlayerComputedData extends PlayerRawData {
   aggregations_meta: any[];
 }
 
-export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedData {
+/**
+ * Calculates the total weighted score based on K1-K5 points
+ */
+export function calculateWeightedTotal(
+  points: { p1: number; p2: number; p3: number; p4: number; p5: number },
+  weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS
+): number {
+  const rawSum = 
+    (points.p1 * weights.weight_k1) +
+    (points.p2 * weights.weight_k2) +
+    (points.p3 * weights.weight_k3) +
+    (points.p4 * weights.weight_k4) +
+    (points.p5 * weights.weight_k5);
+    
+  // Multiply by 5 and round to 2 decimal places to match current frontend expectations
+  return Math.round(rawSum * 5 * 100) / 100;
+}
+
+export function aggregatePlayerData(records: PlayerRawData[], weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS): PlayerComputedData {
   if (records.length === 0) throw new Error("No data to aggregate");
 
   const meta = records.map(r => ({
@@ -152,11 +172,14 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
   const points_k4 = calculatePointsK4(siegequote_pct);
   const points_k5 = calculatePointsK5(avg_high_per_leg);
 
-  const total_points = points_k1 + points_k2 + points_k3 + points_k4 + points_k5;
+  const total_points = calculateWeightedTotal(
+    { p1: points_k1, p2: points_k2, p3: points_k3, p4: points_k4, p5: points_k5 },
+    weights
+  );
 
   return {
     source: "aggregated",
-    team: records[0].team, // Assume user stays in same verein
+    team: records[0].team,
     gespielte_single_spiele: totalSingleSpiele,
     gespielte_legs: totalLegs,
     avg_total,
