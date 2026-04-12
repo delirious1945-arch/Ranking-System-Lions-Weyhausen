@@ -1,3 +1,4 @@
+// Build trigger for manual game schema updates
 generator client {
   provider = "prisma-client-js"
 }
