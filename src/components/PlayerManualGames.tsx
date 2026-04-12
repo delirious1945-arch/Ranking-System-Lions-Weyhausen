@@ -50,8 +50,11 @@ export default function PlayerManualGames({ playerName }: Props) {
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
-                    // Filter to only this player's games
-                    setGames(data.filter((g: ManualGame) => g.player_name === playerName));
+                    // Filter to only this player's games - use trim() for safety
+                    const targetName = playerName.trim().toLowerCase();
+                    setGames(data.filter((g: ManualGame) => 
+                        g.player_name.trim().toLowerCase() === targetName
+                    ));
                 }
             })
             .finally(() => setLoading(false));

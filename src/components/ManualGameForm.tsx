@@ -245,6 +245,7 @@ export default function ManualGameForm() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <input type="number" step="0.01" placeholder="AVG Total" value={formData.game1_avg} onChange={e => set('game1_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                         <input type="number" step="0.01" placeholder="AVG 9-Dart" value={formData.game1_avg_9} onChange={e => set('game1_avg_9', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
+                                        <input type="number" step="0.01" placeholder="AVG 18-Dart" value={formData.game1_avg_18} onChange={e => set('game1_avg_18', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                         <button type="button" onClick={() => set('game1_win', !formData.game1_win)} style={{ padding: '12px', borderRadius: '12px', border: 'none', fontWeight: 800, background: formData.game1_win ? '#22c55e' : '#ef4444', color: '#fff' }}>
                                             {formData.game1_win ? 'GEWONNEN' : 'VERLOREN'}
                                         </button>
@@ -255,6 +256,7 @@ export default function ManualGameForm() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <input type="number" step="0.01" placeholder="AVG Total" value={formData.game2_avg} onChange={e => set('game2_avg', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                         <input type="number" step="0.01" placeholder="AVG 9-Dart" value={formData.game2_avg_9} onChange={e => set('game2_avg_9', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
+                                        <input type="number" step="0.01" placeholder="AVG 18-Dart" value={formData.game2_avg_18} onChange={e => set('game2_avg_18', parseFloat(e.target.value) || 0)} style={inputGlassStyle} />
                                         <button type="button" onClick={() => set('game2_win', !formData.game2_win)} style={{ padding: '12px', borderRadius: '12px', border: 'none', fontWeight: 800, background: formData.game2_win ? '#22c55e' : '#ef4444', color: '#fff' }}>
                                             {formData.game2_win ? 'GEWONNEN' : 'VERLOREN'}
                                         </button>
