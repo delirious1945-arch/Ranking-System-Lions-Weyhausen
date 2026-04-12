@@ -162,7 +162,7 @@ export async function POST(req?: Request) {
         }
 
         const ranked: RankedPlayer[] = Array.from(aggregatedMap.values()).map(p => {
-            const gespielte_legs = p.legs_won + p.legs_lost;
+            const gespielte_legs = p.gespielte_legs;
             const avg_total = p.total_legs_for_avg > 0 ? p.weighted_avg_total / p.total_legs_for_avg : 0;
             const avg_9 = p.total_legs_for_avg > 0 ? p.weighted_avg_9 / p.total_legs_for_avg : 0;
             const avg_18 = p.total_legs_for_avg > 0 ? p.weighted_avg_18 / p.total_legs_for_avg : 0;
