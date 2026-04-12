@@ -46,10 +46,8 @@ export async function POST(req?: Request) {
 
         const currentWeekId = targetWeekId || getWeekId();
 
-        // 3. Fetch Manual Games for this week
-        const manualGames = await prisma.manualGame.findMany({
-            where: { week_id: currentWeekId }
-        });
+        // 3. Fetch all Manual Games across the season
+        const manualGames = await prisma.manualGame.findMany();
 
         console.log(`[update-snapshot] Total players from API: ${allScrapedRaw.length}`);
 
