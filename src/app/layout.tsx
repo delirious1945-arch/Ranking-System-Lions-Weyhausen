@@ -17,7 +17,7 @@ function getWeekId(): string {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   
-  const spieltag = weekNo + 3;
+  const spieltag = weekNo;
   return `Spieltag ${spieltag}`;
 }
 
