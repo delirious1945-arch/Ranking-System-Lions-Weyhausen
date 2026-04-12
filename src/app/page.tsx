@@ -8,6 +8,7 @@ interface PageProps {
 
 async function getData(selectedWeek?: string, selectedId?: string) {
   let snapshot;
+  let previousSnapshot;
 
   if (selectedId) {
     snapshot = await prisma.snapshot.findUnique({
@@ -27,6 +28,31 @@ async function getData(selectedWeek?: string, selectedId?: string) {
     });
   }
 
+  if (snapshot) {
+    // Try to find the latest snapshot of a DIFFERENT week_id
+    previousSnapshot = await prisma.snapshot.findFirst({
+      where: {
+        week_id: { notIn: [snapshot.week_id, "Saison 2025/26 - Final"] },
+        timestamp: { lt: snapshot.timestamp }
+      },
+      orderBy: { timestamp: 'desc' },
+      include: { values: true }
+    });
+
+    // Fallback: If no different week found, just take any older snapshot
+    if (!previousSnapshot) {
+      previousSnapshot = await prisma.snapshot.findFirst({
+        where: {
+          snapshot_id: { not: snapshot.snapshot_id },
+          week_id: { not: "Saison 2025/26 - Final" },
+          timestamp: { lt: snapshot.timestamp }
+        },
+        orderBy: { timestamp: 'desc' },
+        include: { values: true }
+      });
+    }
+  }
+
   const rawSnapshots = await prisma.snapshot.findMany({
     orderBy: { timestamp: "desc" },
     select: { snapshot_id: true, week_id: true, timestamp: true },
@@ -42,7 +68,7 @@ async function getData(selectedWeek?: string, selectedId?: string) {
   const vetos = await prisma.veto.findMany({ where: { active: true } });
   const vetoSet = new Set(vetos.map((v: any) => v.player_name));
 
-  return { snapshot, allSnapshots, vetoSet };
+  return { snapshot, previousSnapshot, allSnapshots, vetoSet };
 }
 
 const TABS = [
@@ -66,8 +92,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const selectedWeek = typeof params.week === 'string' ? params.week : undefined;
   const activeTab = typeof params.tab === 'string' ? params.tab : "overview";
 
-  const { snapshot, allSnapshots, vetoSet } = await getData(selectedWeek, selectedId);
+  const { snapshot, previousSnapshot, allSnapshots, vetoSet } = await getData(selectedWeek, selectedId);
   const allValues: any[] = snapshot?.values ?? [];
+  const prevValues: any[] = previousSnapshot?.values ?? [];
+  
+  const prevRankMap = new Map(prevValues.map(v => [v.player_name, v.rank]));
 
   const eligible = allValues.filter(v => !vetoSet.has(v.player_name));
   const top5 = eligible.slice(0, 5);
@@ -212,35 +241,55 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <div style={{ height: 1, flex: 1, background: "var(--rank-top5-bg)" }} />
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
-                  {top5.map((p, i) => (
-                    <Link key={p.id} href={`/history/${encodeURIComponent(p.player_name)}`} style={{ textDecoration: "none" }}>
-                      <div className="card-hover" style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--rank-top5-bg)",
-                        borderRadius: 12,
-                        padding: "14px",
-                        position: "relative",
-                        overflow: "hidden"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <span style={{ fontSize: 20, fontWeight: 800, color: "var(--rank-top5)" }}>#{i + 1}</span>
-                          {vetoSet.has(p.player_name) && (
-                            <span style={{ fontSize: 9, fontWeight: 700, color: "var(--amber)", background: "var(--amber-muted)", padding: "2px 6px", borderRadius: 4 }}>VETO</span>
-                          )}
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {p.player_name}
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 10 }}>{p.verein}</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                          <span style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>
-                            {p.total_points}
-                          </span>
-                          <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>PKT</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                    {top5.map((p, i) => {
+                      const currentRank = i + 1;
+                      const prevRank = prevRankMap.get(p.player_name);
+                      const rankChange = prevRank ? prevRank - currentRank : 0;
+
+                      return (
+                        <Link key={p.id} href={`/history/${encodeURIComponent(p.player_name)}`} style={{ textDecoration: "none" }}>
+                          <div className="card-hover" style={{
+                            background: "var(--bg-card)",
+                            border: "1px solid var(--rank-top5-bg)",
+                            borderRadius: 12,
+                            padding: "14px",
+                            position: "relative",
+                            overflow: "hidden"
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                                <span style={{ fontSize: 20, fontWeight: 800, color: "var(--rank-top5)" }}>#{currentRank}</span>
+                                {rankChange !== 0 && (
+                                  <span style={{ 
+                                    fontSize: 10, 
+                                    fontWeight: 700, 
+                                    color: rankChange > 0 ? "var(--green)" : "var(--red)",
+                                    background: rankChange > 0 ? "var(--green-muted)" : "var(--red-muted)",
+                                    padding: "1px 4px",
+                                    borderRadius: 4
+                                  }}>
+                                    {rankChange > 0 ? `+${rankChange}` : rankChange}
+                                  </span>
+                                )}
+                              </div>
+                                {vetoSet.has(p.player_name) && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "var(--amber)", background: "var(--amber-muted)", padding: "2px 6px", borderRadius: 4 }}>VETO</span>
+                                )}
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {p.player_name}
+                            </div>
+                            <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 10 }}>{p.verein}</div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                              <span style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>
+                                {p.total_points}
+                              </span>
+                              <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>PKT</span>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
                 </div>
               </section>
 
@@ -278,9 +327,30 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                         return (
                           <tr key={p.id} style={{ opacity: isVeto ? 0.45 : 1, background: rs.bg }}>
                             <td>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: rs.color }}>
-                                {rank}
-                              </span>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: rs.color }}>
+                                  {rank}
+                                </span>
+                                {(() => {
+                                  const prevRank = prevRankMap.get(p.player_name);
+                                  if (!prevRank) return null;
+                                  const change = prevRank - rank;
+                                  if (change === 0) return <span style={{ fontSize: 9, color: "var(--text-muted)" }}>-</span>;
+                                  return (
+                                    <span style={{ 
+                                      fontSize: 10, 
+                                      fontWeight: 700, 
+                                      color: change > 0 ? "var(--green)" : "var(--red)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1
+                                    }}>
+                                      {change > 0 ? "↑" : "↓"}
+                                      {Math.abs(change)}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </td>
                             <td>
                               <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
