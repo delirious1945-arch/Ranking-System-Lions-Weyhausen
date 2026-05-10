@@ -223,35 +223,36 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
           {activeTab === "overview" && (
             <>
-              {/* TEAM A & TEAM B RANKINGS */}
+              {/* RANKINGS */}
               {(() => {
                 const teamA = eligible.slice(0, 6);
-                const teamB = allValues.filter(p => !teamA.some(a => a.id === p.id));
+                // Team B gets the next 8 players (7 to 14) from the remaining list
+                const teamB = allValues.filter(p => !teamA.some(a => a.id === p.id)).slice(0, 8);
                 
-                const TeamTable = ({ players, teamName, teamColor, teamBg }: { players: any[], teamName: string, teamColor: string, teamBg: string }) => (
+                const RankingTable = ({ players, title, color, bg }: { players: any[], title: string, color: string, bg: string }) => (
                   <section style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                       <div style={{
                         display: "flex", alignItems: "center", gap: 8,
-                        background: teamBg,
+                        background: bg,
                         padding: "4px 12px",
                         borderRadius: 6,
                       }}>
                         <span style={{
                           display: "inline-block", width: 8, height: 8, borderRadius: 2,
-                          background: teamColor,
+                          background: color,
                         }} />
                         <span style={{
                           fontSize: 12, fontWeight: 800, textTransform: "uppercase",
-                          letterSpacing: "0.08em", color: teamColor,
+                          letterSpacing: "0.08em", color: color,
                         }}>
-                          {teamName}
+                          {title}
                         </span>
                       </div>
-                      <div style={{ height: 1, flex: 1, background: teamBg }} />
+                      <div style={{ height: 1, flex: 1, background: bg }} />
                       <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{players.length} Spieler</span>
                     </div>
-                    <div style={{ borderRadius: 10, border: `1px solid ${teamBg}`, overflow: "hidden", background: "var(--bg-card)" }}>
+                    <div style={{ borderRadius: 10, border: `1px solid ${bg}`, overflow: "hidden", background: "var(--bg-card)" }}>
                       <table className="dart-table">
                         <thead>
                           <tr>
@@ -269,9 +270,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                           {players.map((p) => {
                             const isVeto = vetoSet.has(p.player_name);
                             return (
-                            <tr key={p.id} style={{ opacity: isVeto ? 0.7 : 1 }}>
+                            <tr key={p.id} style={{ opacity: isVeto && title !== "Gesamtranking" ? 0.7 : 1 }}>
                               <td>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: teamColor }}>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: color }}>
                                   {p.rank}
                                 </span>
                               </td>
@@ -286,7 +287,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                                     }}>
                                       {p.player_name}
                                     </Link>
-                                    {isVeto && <span style={{ fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3, fontWeight: 700 }}>VETO</span>}
+                                    {isVeto && title !== "Gesamtranking" && <span style={{ fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3, fontWeight: 700 }}>VETO</span>}
                                   </div>
                                   <span className="show-mobile-only" style={{ fontSize: 10, color: "var(--text-dim)" }}>
                                     {p.total_points} Pkt · {p.siegequote_pct.toFixed(0)}%
@@ -296,7 +297,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                               <td style={{ textAlign: "right" }}>
                                 <span style={{
                                   padding: "3px 8px", borderRadius: 5,
-                                  background: teamBg, color: teamColor,
+                                  background: bg, color: color,
                                   fontWeight: 800, fontSize: 13,
                                 }}>
                                   {p.total_points}
@@ -317,9 +318,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 );
 
                 return (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    <TeamTable players={teamA} teamName="A-Team · 1. Kreisklasse" teamColor="var(--rank-top5)" teamBg="var(--rank-top5-bg)" />
-                    <TeamTable players={teamB} teamName="B-Team · 2. Kreisklasse" teamColor="var(--rank-6to10)" teamBg="var(--rank-6to10-bg)" />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
+                    <RankingTable players={allValues} title="Gesamtranking" color="var(--accent)" bg="var(--surface)" />
+                    
+                    <div style={{ display: "flex", gap: 20, flexDirection: "column" }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, margin: "10px 0 0 0" }}>Team-Aufstellung</h3>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+                        <RankingTable players={teamA} title="A-Team (Pl. 1-6)" color="var(--rank-top5)" bg="var(--rank-top5-bg)" />
+                        <RankingTable players={teamB} title="B-Team (Pl. 7-14)" color="var(--rank-6to10)" bg="var(--rank-6to10-bg)" />
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
