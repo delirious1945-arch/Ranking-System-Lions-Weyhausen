@@ -225,8 +225,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <>
               {/* TEAM A & TEAM B RANKINGS */}
               {(() => {
-                const teamA = eligible.filter(p => p.rank >= 1 && p.rank <= 6);
-                const teamB = eligible.filter(p => p.rank >= 7);
+                const teamA = eligible.slice(0, 6);
+                const teamB = allValues.filter(p => !teamA.some(a => a.id === p.id));
                 
                 const TeamTable = ({ players, teamName, teamColor, teamBg }: { players: any[], teamName: string, teamColor: string, teamBg: string }) => (
                   <section style={{ flex: 1, minWidth: 0 }}>
@@ -266,8 +266,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {players.map((p) => (
-                            <tr key={p.id}>
+                          {players.map((p) => {
+                            const isVeto = vetoSet.has(p.player_name);
+                            return (
+                            <tr key={p.id} style={{ opacity: isVeto ? 0.7 : 1 }}>
                               <td>
                                 <span style={{ fontSize: 14, fontWeight: 800, color: teamColor }}>
                                   {p.rank}
@@ -275,14 +277,17 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                               </td>
                               <td>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                  <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
-                                    textDecoration: "none",
-                                    fontWeight: 700,
-                                    color: "var(--text)",
-                                    fontSize: 13,
-                                  }}>
-                                    {p.player_name}
-                                  </Link>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
+                                      textDecoration: "none",
+                                      fontWeight: 700,
+                                      color: "var(--text)",
+                                      fontSize: 13,
+                                    }}>
+                                      {p.player_name}
+                                    </Link>
+                                    {isVeto && <span style={{ fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3, fontWeight: 700 }}>VETO</span>}
+                                  </div>
                                   <span className="show-mobile-only" style={{ fontSize: 10, color: "var(--text-dim)" }}>
                                     {p.total_points} Pkt · {p.siegequote_pct.toFixed(0)}%
                                   </span>
@@ -303,7 +308,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                               <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.siegequote_pct.toFixed(0)}%</td>
                               <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_high_per_leg.toFixed(2)}</td>
                             </tr>
-                          ))}
+                          );
+                        })}
                         </tbody>
                       </table>
                     </div>
