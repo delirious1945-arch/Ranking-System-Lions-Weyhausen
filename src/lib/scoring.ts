@@ -1,3 +1,5 @@
+import { DEFAULT_WEIGHTS } from "./lions-config";
+
 export function validateValue(value: number, min: number, max: number): boolean {
   return value >= min && value <= max;
 }
@@ -66,6 +68,7 @@ export interface PlayerRawData {
   cnt_100: number;
   cnt_140: number;
   cnt_180: number;
+  is_offline?: boolean;
 }
 
 export interface PlayerComputedData extends PlayerRawData {
@@ -81,7 +84,25 @@ export interface PlayerComputedData extends PlayerRawData {
   aggregations_meta: any[];
 }
 
-export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedData {
+/**
+ * Calculates the total weighted score based on K1-K5 points
+ */
+export function calculateWeightedTotal(
+  points: { p1: number; p2: number; p3: number; p4: number; p5: number },
+  weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS
+): number {
+  const rawSum = 
+    (points.p1 * weights.weight_k1) +
+    (points.p2 * weights.weight_k2) +
+    (points.p3 * weights.weight_k3) +
+    (points.p4 * weights.weight_k4) +
+    (points.p5 * weights.weight_k5);
+    
+  // Multiply by 5 and round to 2 decimal places to match current frontend expectations
+  return Math.round(rawSum * 5 * 100) / 100;
+}
+
+export function aggregatePlayerData(records: PlayerRawData[], weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS): PlayerComputedData {
   if (records.length === 0) throw new Error("No data to aggregate");
 
   const meta = records.map(r => ({
@@ -110,35 +131,38 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
 
   const sum_high_scores = cnt_80 + cnt_100 + cnt_140 + cnt_180;
 
-  let avg_high_per_leg = 0;
-  if (totalLegs === 0) {
-    if (sum_high_scores > 0) {
-      throw new Error("0 legs played but high scores exist");
-    }
-  } else {
-    avg_high_per_leg = sum_high_scores / totalLegs;
-    // Round to 2 decimal places as per requirement
-    avg_high_per_leg = Math.round(avg_high_per_leg * 100) / 100;
+  let siegequote_pct = 0;
+  if (totalGamesPlayed > 0) {
+    siegequote_pct = (totalWins / totalGamesPlayed) * 100;
+    siegequote_pct = Math.round(siegequote_pct * 100) / 100;
   }
 
+  // Averages for K1, K2, K3
   let avg_total = 0;
   let avg_9 = 0;
   let avg_18 = 0;
 
-  if (totalSingleSpiele > 0) {
-    avg_total = records.reduce((sum, r) => sum + (r.avg_total * r.gespielte_single_spiele), 0) / totalSingleSpiele;
-    avg_9 = records.reduce((sum, r) => sum + (r.avg_9 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
-    avg_18 = records.reduce((sum, r) => sum + (r.avg_18 * r.gespielte_single_spiele), 0) / totalSingleSpiele;
+  const recordsWithAvg = records.filter(r => !r.is_offline);
+  const totalSingleSpieleWithAvg = recordsWithAvg.reduce((sum, r) => sum + r.gespielte_single_spiele, 0);
+
+  if (totalSingleSpieleWithAvg > 0) {
+    avg_total = recordsWithAvg.reduce((sum, r) => sum + (r.avg_total * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
+    avg_9 = recordsWithAvg.reduce((sum, r) => sum + (r.avg_9 * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
+    avg_18 = recordsWithAvg.reduce((sum, r) => sum + (r.avg_18 * r.gespielte_single_spiele), 0) / totalSingleSpieleWithAvg;
 
     avg_total = Math.round(avg_total * 100) / 100;
     avg_9 = Math.round(avg_9 * 100) / 100;
     avg_18 = Math.round(avg_18 * 100) / 100;
   }
 
-  let siegequote_pct = 0;
-  if (totalGamesPlayed > 0) {
-    siegequote_pct = (totalWins / totalGamesPlayed) * 100;
-    siegequote_pct = Math.round(siegequote_pct * 100) / 100;
+  // Avg High per Leg (K5)
+  let avg_high_per_leg = 0;
+  const totalLegsWithStats = recordsWithAvg.reduce((sum, r) => sum + r.gespielte_legs, 0);
+  const sumHighScoresWithStats = recordsWithAvg.reduce((sum, r) => sum + (r.cnt_80 + r.cnt_100 + r.cnt_140 + r.cnt_180), 0);
+
+  if (totalLegsWithStats > 0) {
+    avg_high_per_leg = sumHighScoresWithStats / totalLegsWithStats;
+    avg_high_per_leg = Math.round(avg_high_per_leg * 100) / 100;
   }
 
   // Calculate Points
@@ -148,11 +172,14 @@ export function aggregatePlayerData(records: PlayerRawData[]): PlayerComputedDat
   const points_k4 = calculatePointsK4(siegequote_pct);
   const points_k5 = calculatePointsK5(avg_high_per_leg);
 
-  const total_points = points_k1 + points_k2 + points_k3 + points_k4 + points_k5;
+  const total_points = calculateWeightedTotal(
+    { p1: points_k1, p2: points_k2, p3: points_k3, p4: points_k4, p5: points_k5 },
+    weights
+  );
 
   return {
     source: "aggregated",
-    team: records[0].team, // Assume user stays in same verein
+    team: records[0].team,
     gespielte_single_spiele: totalSingleSpiele,
     gespielte_legs: totalLegs,
     avg_total,

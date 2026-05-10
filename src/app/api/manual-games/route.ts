@@ -5,11 +5,14 @@ export async function GET() {
     try {
         const games = await prisma.manualGame.findMany({
             orderBy: { date: 'desc' },
-            take: 20,
+            take: 200,
         });
 
-        return NextResponse.json(games);
+        // Ensure we return an empty array instead of null
+        return NextResponse.json(games || []);
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('API Error /api/manual-games:', error);
+        // Fallback: return empty list so UI doesn't crash, but keep status 200
+        return NextResponse.json([], { status: 200 });
     }
 }

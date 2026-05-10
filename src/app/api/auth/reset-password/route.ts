@@ -16,9 +16,13 @@ export async function POST(request: Request) {
     try {
         const { adminName, playerName } = await request.json();
 
-        // Only Sebastian Kirste can reset passwords
-        if (adminName !== 'Sebastian Kirste') {
-            return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 });
+        // Check if requester is admin in DB
+        const adminUser = await (prisma as any).userPassword.findUnique({
+            where: { player_name: adminName }
+        });
+
+        if (!adminUser || adminUser.role !== 'admin') {
+            return NextResponse.json({ error: 'Nicht autorisiert. Nur Admins können Passwörter zurücksetzen.' }, { status: 403 });
         }
 
         if (!playerName) {

@@ -15,6 +15,29 @@ export default async function PlayerHistoryPage(
         orderBy: { snapshot: { timestamp: 'asc' } }
     });
 
+    // Deduplicate: keep only the newest entry per week_id
+    const weekMap = new Map<string, typeof history[0]>();
+    for (const h of history) {
+        const weekId = h.snapshot.week_id;
+        const existing = weekMap.get(weekId);
+        if (!existing || new Date(h.snapshot.timestamp) > new Date(existing.snapshot.timestamp)) {
+            weekMap.set(weekId, h);
+        }
+    }
+
+    // Helper to get numeric value from "Spieltag X"
+    const getWeekNum = (id: string) => parseInt(id.replace(/\D/g, '')) || 0;
+
+    const dedupedHistory = Array.from(weekMap.values()).sort((a, b) => {
+        // Semantic sort: Spieltag 15 > Spieltag 14
+        const aNum = getWeekNum(a.snapshot.week_id);
+        const bNum = getWeekNum(b.snapshot.week_id);
+        if (aNum !== bNum) return aNum - bNum;
+        
+        // Fallback to timestamp if week numbers are same
+        return new Date(a.snapshot.timestamp).getTime() - new Date(b.snapshot.timestamp).getTime();
+    });
+
     const veto = await prisma.veto.findFirst({
         where: { player_name: decodePlayerName, active: true }
     });
@@ -31,7 +54,7 @@ export default async function PlayerHistoryPage(
         );
     }
 
-    const latest = history[history.length - 1];
+    const latest = dedupedHistory[dedupedHistory.length - 1];
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -58,21 +81,21 @@ export default async function PlayerHistoryPage(
                         Aktuelle Statistiken ({latest.snapshot.week_id})
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
                             <div className="text-sm text-slate-400">∅ Average</div>
                             <div className="text-2xl font-black text-white">{latest.avg_total.toFixed(2)}</div>
                         </div>
                         <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                            <div className="text-sm text-slate-400">∅ 9 Darts</div>
+                            <div className="text-sm text-slate-400">∅ First 9</div>
                             <div className="text-2xl font-black text-white">{latest.avg_9.toFixed(2)}</div>
+                        </div>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-sm text-slate-400">∅ First 18</div>
+                            <div className="text-2xl font-black text-white">{latest.avg_18.toFixed(2)}</div>
                         </div>
                         <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
                             <div className="text-sm text-slate-400">Siegquote</div>
                             <div className="text-2xl font-black text-white">{latest.siegequote_pct.toFixed(1)}%</div>
-                        </div>
-                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                            <div className="text-sm text-slate-400">HighScore/Leg</div>
-                            <div className="text-2xl font-black text-white">{latest.avg_high_per_leg.toFixed(2)}</div>
                         </div>
                     </div>
                 </div>
@@ -91,7 +114,7 @@ export default async function PlayerHistoryPage(
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
-                                {history.slice().reverse().map((h: any, i: number, arr: any[]) => {
+                                {dedupedHistory.slice().reverse().map((h: any, i: number, arr: any[]) => {
                                     const prev = arr[i + 1];
                                     const rankDelta = prev ? prev.rank - h.rank : 0;
                                     const pointsDelta = prev ? h.total_points - prev.total_points : 0;
@@ -131,24 +154,49 @@ export default async function PlayerHistoryPage(
                 </div>
             </div>
 
-            {/* Match Statistics Widget */}
+
+            {/* Match Statistics Widget (Aggregate) */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <Target className="w-5 h-5 text-emerald-400" />
-                    Aktuelle Match-Statistiken
+                    Detail-Statistiken (Saison Total)
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-800/40 p-5 rounded-xl border border-white/5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
                         <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Single Spiele</div>
-                        <div className="text-3xl font-black text-white">{latest.gespielte_single_spiele}</div>
+                        <div className="text-2xl font-black text-white">{latest.gespielte_single_spiele}</div>
                     </div>
-                    <div className="bg-emerald-500/10 p-5 rounded-xl border border-emerald-500/20">
+                    <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
                         <div className="text-xs text-emerald-400 uppercase tracking-wider font-bold mb-1">Gewonnen</div>
-                        <div className="text-3xl font-black text-emerald-400">{latest.wins}</div>
+                        <div className="text-2xl font-black text-emerald-400">{latest.wins}</div>
                     </div>
-                    <div className="bg-slate-800/40 p-5 rounded-xl border border-white/5">
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Gespielte Legs</div>
-                        <div className="text-3xl font-black text-white">{latest.gespielte_legs}</div>
+                    <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Alle Legs</div>
+                        <div className="text-2xl font-black text-white">{latest.gespielte_legs}</div>
+                    </div>
+                    <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Score / Leg</div>
+                        <div className="text-2xl font-black text-white">{latest.avg_high_per_leg.toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <h4 className="text-sm text-slate-400 font-bold mb-3 uppercase tracking-wider mt-6">Highlights geworfen</h4>
+                <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-slate-800/60 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
+                        <div className="text-xs text-slate-400 font-bold mb-1">80+</div>
+                        <div className="text-2xl font-black text-indigo-300">{latest.cnt_80}</div>
+                    </div>
+                    <div className="bg-slate-800/60 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center">
+                        <div className="text-xs text-slate-400 font-bold mb-1">100+</div>
+                        <div className="text-2xl font-black text-purple-400">{latest.cnt_100}</div>
+                    </div>
+                    <div className="bg-slate-800/60 p-4 rounded-xl border border-emerald-500/10 flex flex-col items-center justify-center text-center">
+                        <div className="text-xs text-slate-400 font-bold mb-1">140+</div>
+                        <div className="text-2xl font-black text-emerald-400">{latest.cnt_140}</div>
+                    </div>
+                    <div className="bg-slate-800/60 p-4 rounded-xl border border-rose-500/20 flex flex-col items-center justify-center text-center shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                        <div className="text-xs text-rose-400/90 font-bold mb-1">180er</div>
+                        <div className="text-2xl font-black text-rose-400">{latest.cnt_180}</div>
                     </div>
                 </div>
             </div>

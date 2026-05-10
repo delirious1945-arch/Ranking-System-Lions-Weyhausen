@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import SnapshotSelector from "@/components/SnapshotSelector";
+
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -8,6 +8,7 @@ interface PageProps {
 
 async function getData(selectedWeek?: string, selectedId?: string) {
   let snapshot;
+  let previousSnapshot;
 
   if (selectedId) {
     snapshot = await prisma.snapshot.findUnique({
@@ -27,6 +28,31 @@ async function getData(selectedWeek?: string, selectedId?: string) {
     });
   }
 
+  if (snapshot) {
+    // Try to find the latest snapshot of a DIFFERENT week_id
+    previousSnapshot = await prisma.snapshot.findFirst({
+      where: {
+        week_id: { notIn: [snapshot.week_id, "Saison 2025/26 - Final"] },
+        timestamp: { lt: snapshot.timestamp }
+      },
+      orderBy: { timestamp: 'desc' },
+      include: { values: true }
+    });
+
+    // Fallback: If no different week found, just take any older snapshot
+    if (!previousSnapshot) {
+      previousSnapshot = await prisma.snapshot.findFirst({
+        where: {
+          snapshot_id: { not: snapshot.snapshot_id },
+          week_id: { not: "Saison 2025/26 - Final" },
+          timestamp: { lt: snapshot.timestamp }
+        },
+        orderBy: { timestamp: 'desc' },
+        include: { values: true }
+      });
+    }
+  }
+
   const rawSnapshots = await prisma.snapshot.findMany({
     orderBy: { timestamp: "desc" },
     select: { snapshot_id: true, week_id: true, timestamp: true },
@@ -42,7 +68,7 @@ async function getData(selectedWeek?: string, selectedId?: string) {
   const vetos = await prisma.veto.findMany({ where: { active: true } });
   const vetoSet = new Set(vetos.map((v: any) => v.player_name));
 
-  return { snapshot, allSnapshots, vetoSet };
+  return { snapshot, previousSnapshot, allSnapshots, vetoSet };
 }
 
 const TABS = [
@@ -54,11 +80,7 @@ const TABS = [
   { id: "k5", label: "HighScore/Leg" },
 ];
 
-function rankStyle(rank: number): { color: string; bg: string } {
-  if (rank <= 5) return { color: "var(--rank-top5)", bg: "var(--rank-top5-bg)" };
-  if (rank >= 6 && rank <= 12) return { color: "var(--rank-6to10)", bg: "var(--rank-6to10-bg)" };
-  return { color: "var(--text-muted)", bg: "transparent" };
-}
+
 
 export default async function DashboardPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -66,11 +88,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const selectedWeek = typeof params.week === 'string' ? params.week : undefined;
   const activeTab = typeof params.tab === 'string' ? params.tab : "overview";
 
-  const { snapshot, allSnapshots, vetoSet } = await getData(selectedWeek, selectedId);
+  const { snapshot, previousSnapshot, allSnapshots, vetoSet } = await getData(selectedWeek, selectedId);
   const allValues: any[] = snapshot?.values ?? [];
+  const prevValues: any[] = previousSnapshot?.values ?? [];
+  
+  const prevRankMap = new Map(prevValues.map(v => [v.player_name, v.rank]));
 
   const eligible = allValues.filter(v => !vetoSet.has(v.player_name));
-  const top5 = eligible.slice(0, 5);
 
   const lastUpdated = snapshot?.timestamp
     ? new Date(snapshot.timestamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
@@ -136,7 +160,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             wordBreak: "break-word",
             maxWidth: "100%"
           }}>
-            LIONS WEYHAUSEN
+            SAISON 2025/26
           </h1>
           <p style={{
             margin: "4px 0 0",
@@ -149,17 +173,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             maxWidth: "100%",
             wordBreak: "break-word",
           }}>
-            Dart Ranking Dashboard
+            ABSCHLUSSRANKING - FINAL
           </p>
 
         </div>
       </div>
 
-      {/* Snapshot Selector */}
-      <SnapshotSelector
-        allSnapshots={allSnapshots}
-        currentId={snapshot?.snapshot_id?.toString()}
-      />
+
 
       {allValues.length === 0 && (
         <div style={{
@@ -203,117 +223,100 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
           {activeTab === "overview" && (
             <>
-              {/* TOP 5 CARDS */}
-              <section>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--rank-top5)" }}>
-                    Top 5
-                  </span>
-                  <div style={{ height: 1, flex: 1, background: "var(--rank-top5-bg)" }} />
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
-                  {top5.map((p, i) => (
-                    <Link key={p.id} href={`/history/${encodeURIComponent(p.player_name)}`} style={{ textDecoration: "none" }}>
-                      <div className="card-hover" style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--rank-top5-bg)",
-                        borderRadius: 12,
-                        padding: "14px",
-                        position: "relative",
-                        overflow: "hidden"
+              {/* TEAM A & TEAM B RANKINGS */}
+              {(() => {
+                const teamA = eligible.filter(p => p.rank >= 1 && p.rank <= 6);
+                const teamB = eligible.filter(p => p.rank >= 7);
+                
+                const TeamTable = ({ players, teamName, teamColor, teamBg }: { players: any[], teamName: string, teamColor: string, teamBg: string }) => (
+                  <section style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        background: teamBg,
+                        padding: "4px 12px",
+                        borderRadius: 6,
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <span style={{ fontSize: 20, fontWeight: 800, color: "var(--rank-top5)" }}>#{i + 1}</span>
-                          {vetoSet.has(p.player_name) && (
-                            <span style={{ fontSize: 9, fontWeight: 700, color: "var(--amber)", background: "var(--amber-muted)", padding: "2px 6px", borderRadius: 4 }}>VETO</span>
-                          )}
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {p.player_name}
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 10 }}>{p.verein}</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                          <span style={{ fontSize: 26, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>
-                            {p.total_points}
-                          </span>
-                          <span style={{ fontSize: 10, color: "var(--text-dim)", fontWeight: 600 }}>PKT</span>
-                        </div>
+                        <span style={{
+                          display: "inline-block", width: 8, height: 8, borderRadius: 2,
+                          background: teamColor,
+                        }} />
+                        <span style={{
+                          fontSize: 12, fontWeight: 800, textTransform: "uppercase",
+                          letterSpacing: "0.08em", color: teamColor,
+                        }}>
+                          {teamName}
+                        </span>
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-
-              {/* FULL RANKING TABLE */}
-              <section>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }}>
-                    Gesamtranking
-                  </span>
-                  <div style={{ height: 1, flex: 1, background: "var(--border)" }} />
-                  <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{allValues.length} Spieler</span>
-                </div>
-                <div style={{ borderRadius: 10, border: "1px solid var(--border)", overflow: "hidden", background: "var(--bg-card)" }}>
-                  <table className="dart-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: 36 }}>#</th>
-                        <th>Spieler</th>
-                        <th style={{ textAlign: "right" }}>Pkt</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ Avg</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 9</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 18</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>Wins</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>H S/L</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>Avg</th>
-                        <th className="hide-mobile" style={{ textAlign: "right" }}>Sieg%</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allValues.map((p, i) => {
-                        const rank = i + 1;
-                        const rs = rankStyle(rank);
-                        const isVeto = vetoSet.has(p.player_name);
-
-                        return (
-                          <tr key={p.id} style={{ opacity: isVeto ? 0.45 : 1, background: rs.bg }}>
-                            <td>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: rs.color }}>
-                                {rank}
-                              </span>
-                            </td>
-                            <td>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
-                                  textDecoration: "none",
-                                  fontWeight: rank <= 10 ? 700 : 500,
-                                  color: "var(--text)",
-                                  fontSize: 13,
-                                }}>
-                                  {p.player_name}
-                                </Link>
-                                {/* Show Mannschaft on mobile (since column is hidden) */}
-                                <span className="show-mobile-only" style={{ fontSize: 10, color: "var(--text-dim)" }}>
-                                  {p.verein}
-                                </span>
-                              </div>
-                              {isVeto && <span style={{ marginLeft: 6, fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3 }}>Für Top 5 Auswahl nicht berücksichtigt</span>}
-                            </td>
-                            <td style={{ textAlign: "right", fontWeight: 800, color: rs.color, fontSize: 14 }}>{p.total_points}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k1 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k1}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k2 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k2}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k3 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k3}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k4 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k4}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: p.points_k5 > 0 ? "var(--text)" : "var(--text-dim)", fontSize: 12 }}>{p.points_k5}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", color: "var(--text-muted)", fontSize: 12 }}>{p.avg_total.toFixed(1)}</td>
-                            <td className="hide-mobile" style={{ textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{p.siegequote_pct.toFixed(0)}%</td>
+                      <div style={{ height: 1, flex: 1, background: teamBg }} />
+                      <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{players.length} Spieler</span>
+                    </div>
+                    <div style={{ borderRadius: 10, border: `1px solid ${teamBg}`, overflow: "hidden", background: "var(--bg-card)" }}>
+                      <table className="dart-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: 36 }}>#</th>
+                            <th>Spieler</th>
+                            <th style={{ textAlign: "right" }}>Pkt</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ Avg</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 9D</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 18D</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>Sieg%</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>HS/L</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+                        </thead>
+                        <tbody>
+                          {players.map((p) => (
+                            <tr key={p.id}>
+                              <td>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: teamColor }}>
+                                  {p.rank}
+                                </span>
+                              </td>
+                              <td>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                  <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
+                                    textDecoration: "none",
+                                    fontWeight: 700,
+                                    color: "var(--text)",
+                                    fontSize: 13,
+                                  }}>
+                                    {p.player_name}
+                                  </Link>
+                                  <span className="show-mobile-only" style={{ fontSize: 10, color: "var(--text-dim)" }}>
+                                    {p.total_points} Pkt · {p.siegequote_pct.toFixed(0)}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <span style={{
+                                  padding: "3px 8px", borderRadius: 5,
+                                  background: teamBg, color: teamColor,
+                                  fontWeight: 800, fontSize: 13,
+                                }}>
+                                  {p.total_points}
+                                </span>
+                              </td>
+                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text)" }}>{p.avg_total.toFixed(1)}</td>
+                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_9.toFixed(1)}</td>
+                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_18.toFixed(1)}</td>
+                              <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.siegequote_pct.toFixed(0)}%</td>
+                              <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_high_per_leg.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                );
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    <TeamTable players={teamA} teamName="A-Team · 1. Kreisklasse" teamColor="var(--rank-top5)" teamBg="var(--rank-top5-bg)" />
+                    <TeamTable players={teamB} teamName="B-Team · 2. Kreisklasse" teamColor="var(--rank-6to10)" teamBg="var(--rank-6to10-bg)" />
+                  </div>
+                );
+              })()}
 
             </>
           )}
@@ -402,11 +405,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <div style={{ display: "flex", gap: 24, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "var(--rank-top5)" }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-top5)" }}>A Team (Platz 1–5)</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-top5)" }}>A-Team · 1. Kreisklasse (Platz 1–6)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "var(--rank-6to10)" }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-6to10)" }}>B Team (Platz 6–12)</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--rank-6to10)" }}>B-Team · 2. Kreisklasse (Platz 7–19)</span>
                 </div>
               </div>
 

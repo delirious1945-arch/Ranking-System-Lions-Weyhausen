@@ -1,456 +1,111 @@
 import { NextResponse } from 'next/server';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
 import { prisma } from '@/lib/prisma';
 import {
     calculatePointsK1toK3,
     calculatePointsK4,
-    calculatePointsK5
+    calculatePointsK5,
+    calculateWeightedTotal
 } from '@/lib/scoring';
-
-// ─── Configuration ────────────────────────────────────────────────
-interface EventConfig {
-    eventId: number;
-    includeTeams: string[];        // Include players of these teams
-    alwaysInclude: string[];       // Always include these player names
-}
-
-const EVENTS: EventConfig[] = [
-    {
-        eventId: 247,
-        includeTeams: ['Lions Weyhausen A'],
-        alwaysInclude: [],
-    },
-    {
-        eventId: 251,
-        includeTeams: ['Lions Weyhausen B'],
-        alwaysInclude: [],
-    },
-    {
-        eventId: 239,
-        includeTeams: [],
-        alwaysInclude: ['Jens Goltermann'],
-    },
-];
-
-const BASE = 'https://2k-dart-software.com/frontend/events/10/event';
-
-// ─── Helpers ───────────────────────────────────────────────────────
-function parseFloat2(str: string): number {
-    if (!str || str.trim() === '' || str.trim() === '-') return 0;
-    const n = parseFloat(str.replace(/[Øø ]/g, '').replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-}
-
-function parseInt2(str: string): number {
-    if (!str || str.trim() === '' || str.trim() === '-') return 0;
-    const n = parseInt(str.replace(/[+]/g, ''), 10);
-    return isNaN(n) ? 0 : n;
-}
+import { LIONS_NAMES, DEFAULT_WEIGHTS } from '@/lib/lions-config';
+import { getWeekId } from '@/lib/date-utils';
+import { updateMatchCache, getAggregateStatsUpTo } from '@/lib/match-service';
 
 /**
- * Groups snapshots from Friday to Thursday.
- * Today (Friday, March 13th 2026, ISO W11) starts "Spieltag 15".
+ * Robust Snapshot Update API
+ * This route aggregates season statistics from 3k-darts (Events 247, 251, 239)
+ * and merges them with local manualGame records.
+ * 
+ * FIXES:
+ * 1. cache: 'no-store' added to fetch calls to bypass Next.js cache.
+ * 2. Pre-initialization of all 17 players to ensure none are missing.
+ * 3. Robust name matching (case-insensitive, trimmed).
+ * 4. Cleanup of "Saison 2025/26 - Final" and current Spieltag.
  */
-function getWeekId(): string {
-    const now = new Date();
-    // Move "now" forward by 3 days so that Friday (ISO Day 5) maps to Monday (ISO Day 1) of the "next" logical week calculation
-    // This effectively shifts the week-boundary from Mon->Fri.
-    const shifted = new Date(now);
-    shifted.setDate(shifted.getDate() + 3);
 
-    const d = new Date(Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    
-    // ISO W11 (shifted) yields Week 12. 12 + 3 = 15.
-    const spieltag = weekNo + 3;
-    return `Spieltag ${spieltag}`;
-}
+const HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+};
 
-// ─── Scrape one event ─────────────────────────────────────────────
-interface ScrapedPlayer {
-    player_name: string;
-    verein: string;
-    avg_total: number;
-    avg_9: number;
-    avg_18: number;
-    cnt_180: number;
-    cnt_140: number;
-    cnt_100: number;
-    cnt_80: number;
-    gespielte_single_spiele: number;
-    wins: number;
-    legs_won: number;
-    legs_lost: number;
-}
+// Removed fetchSeasonStats: Logic moved to MatchService
 
-async function scrapeEvent(page: any, eventId: number, config: EventConfig): Promise<ScrapedPlayer[]> {
-    const baseUrl = `${BASE}/${eventId}`;
+export async function POST(req?: Request) {
+    let targetWeekId: string | null = null;
 
-    // 1. Stats page
-    await page.goto(`${baseUrl}/statistics/statistics`, { waitUntil: 'networkidle0', timeout: 30000 });
-    await page.waitForSelector('p-table tbody tr', { timeout: 20000 });
-
-    const statsRows = await page.evaluate(() =>
-        Array.from(document.querySelectorAll('p-table tbody tr')).map(tr =>
-            Array.from(tr.querySelectorAll('td')).map(td => (td as HTMLElement).innerText?.trim() ?? '')
-        )
-    );
-
-    const statsMap = new Map<string, {
-        avg_total: number; avg_9: number; avg_18: number;
-        cnt_180: number; cnt_140: number; cnt_100: number; cnt_80: number;
-    }>();
-
-    for (const row of statsRows) {
-        const name = row[1]?.trim();
-        if (!name || name.includes('&')) continue; // skip Doppel entries
-        statsMap.set(name, {
-            avg_total: parseFloat2(row[2]),
-            cnt_180: parseInt2(row[5]),
-            cnt_140: parseInt2(row[6]),
-            cnt_100: parseInt2(row[7]),
-            cnt_80: parseInt2(row[8]),
-            avg_9: parseFloat2(row[9]),
-            avg_18: parseFloat2(row[12]),
-        });
+    if (req) {
+        try {
+            const body = await req.json();
+            if (body?.targetWeekId) {
+                targetWeekId = body.targetWeekId;
+            }
+        } catch (e) { /* ignore */ }
     }
 
-    // 2. Bilanz page (team name + Spiele/Legs)
-    await page.goto(`${baseUrl}/statistics/player/results`, { waitUntil: 'networkidle0', timeout: 30000 });
-    await page.waitForSelector('p-table tbody tr', { timeout: 20000 });
-
-    const bilanzRows = await page.evaluate(() =>
-        Array.from(document.querySelectorAll('p-table tbody tr')).map(tr =>
-            Array.from(tr.querySelectorAll('td')).map(td => (td as HTMLElement).innerText?.trim() ?? '')
-        )
-    );
-
-    const players: ScrapedPlayer[] = [];
-
-    for (const row of bilanzRows) {
-        const name = row[1]?.trim();
-        const verein = row[2]?.trim();
-        if (!name || !verein) continue;
-
-        const isTargetTeam = config.includeTeams.includes(verein);
-        const isAlwaysInclude = config.alwaysInclude.includes(name);
-        if (!isTargetTeam && !isAlwaysInclude) continue;
-
-        const stats = statsMap.get(name);
-        const wins = parseInt2(row[4]);
-        const losses = parseInt2(row[6]);
-        const legs_won = parseInt2(row[10]);
-        const legs_lost = parseInt2(row[12]);
-
-        players.push({
-            player_name: name,
-            verein,
-            avg_total: stats?.avg_total ?? 0,
-            avg_9: stats?.avg_9 ?? 0,
-            avg_18: stats?.avg_18 ?? 0,
-            cnt_180: stats?.cnt_180 ?? 0,
-            cnt_140: stats?.cnt_140 ?? 0,
-            cnt_100: stats?.cnt_100 ?? 0,
-            cnt_80: stats?.cnt_80 ?? 0,
-            gespielte_single_spiele: wins + losses,
-            wins,
-            legs_won,
-            legs_lost,
-        });
-    }
-
-    console.log(`[Event ${eventId}] Found ${players.length} eligible players`);
-    return players;
-}
-
-// ─── Route Handler ────────────────────────────────────────────────
-export async function POST() {
-    let browser: any | undefined;
+    const currentWeekId = targetWeekId || getWeekId();
+    console.log(`[update-snapshot] Working on ${currentWeekId}...`);
 
     try {
-        const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+        // 1. Update Match Cache from 3k-Darts
+        console.log("[update-snapshot] SKIPPED: Automatic scraper disabled (Manual Entry Mode)");
+        // await updateMatchCache();
 
-        if (isProd) {
-            // Vercel / Production launch
-            const chromiumAny = chromium as any;
-            browser = await puppeteer.launch({
-                args: chromiumAny.args,
-                defaultViewport: chromiumAny.defaultViewport,
-                executablePath: await chromiumAny.executablePath(),
-                headless: chromiumAny.headless,
-            });
-        } else {
-            // Local fallback (requires full puppeteer installed)
-            const localPuppeteer = require('puppeteer');
-            browser = await localPuppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-            });
-        }
+        // 2. Aggregate Stats up to targeting Spieltag (Guaranteed 17 Players)
+        console.log("[update-snapshot] Step 2: Aggregating stats...");
+        const weekNum = parseInt(currentWeekId.replace(/\D/g, '')) || 16;
+        const seasonalStats = await getAggregateStatsUpTo(weekNum);
 
-        const page = await browser.newPage();
-        await page.setDefaultTimeout(60000);
+        console.log(`[update-snapshot] Step 3: Success. Aggregated ${seasonalStats.length} players for ${currentWeekId}`);
 
-        // Scrape all events
-        const allScrapedRaw: ScrapedPlayer[] = [];
-
-        for (const eventConfig of EVENTS) {
-            const players = await scrapeEvent(page, eventConfig.eventId, eventConfig);
-            allScrapedRaw.push(...players);
-        }
-
-        await browser.close();
-        browser = undefined;
-
-        // --- Fetch Manual Games ---
-        // Calculate current week ID
-        const now = new Date();
-        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-        const currentWeekId = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
-
-        const manualGames = await prisma.manualGame.findMany({
-            where: { week_id: currentWeekId }
-        });
-
-        console.log(`[update-snapshot] Found ${manualGames.length} manual games for ${currentWeekId}`);
-
-        console.log(`[update-snapshot] Total raw players collected: ${allScrapedRaw.length}`);
-
-        // --- Aggregation Logic ---
-        // If a player is in multiple events, we sum their counts and weight their averages.
-        const aggregatedMap = new Map<string, {
-            player_name: string;
-            verein: string;
-            wins: number;
-            legs_won: number;
-            legs_lost: number;
-            gespielte_single_spiele: number;
-            cnt_80: number;
-            cnt_100: number;
-            cnt_140: number;
-            cnt_180: number;
-            weighted_avg_total: number;
-            weighted_avg_9: number;
-            weighted_avg_18: number;
-            total_legs_for_avg: number;
-        }>();
-
-        for (const p of allScrapedRaw) {
-            const existing = aggregatedMap.get(p.player_name);
-            const currentLegs = p.legs_won + p.legs_lost;
-
-            if (existing) {
-                existing.wins += p.wins;
-                existing.legs_won += p.legs_won;
-                existing.legs_lost += p.legs_lost;
-                existing.gespielte_single_spiele += p.gespielte_single_spiele;
-                existing.cnt_80 += p.cnt_80;
-                existing.cnt_100 += p.cnt_100;
-                existing.cnt_140 += p.cnt_140;
-                existing.cnt_180 += p.cnt_180;
-
-                // Average weighting
-                existing.weighted_avg_total += (p.avg_total * currentLegs);
-                existing.weighted_avg_9 += (p.avg_9 * currentLegs);
-                existing.weighted_avg_18 += (p.avg_18 * currentLegs);
-                existing.total_legs_for_avg += currentLegs;
-
-                // Keep the primary team name (e.g., Lions A preferred over Jens Liga)
-                if (p.verein.includes('Lions')) {
-                    existing.verein = p.verein;
-                }
-            } else {
-                aggregatedMap.set(p.player_name, {
-                    player_name: p.player_name,
-                    verein: p.verein,
-                    wins: p.wins,
-                    legs_won: p.legs_won,
-                    legs_lost: p.legs_lost,
-                    gespielte_single_spiele: p.gespielte_single_spiele,
-                    cnt_80: p.cnt_80,
-                    cnt_100: p.cnt_100,
-                    cnt_140: p.cnt_140,
-                    cnt_180: p.cnt_180,
-                    weighted_avg_total: p.avg_total * currentLegs,
-                    weighted_avg_9: p.avg_9 * currentLegs,
-                    weighted_avg_18: p.avg_18 * currentLegs,
-                    total_legs_for_avg: currentLegs,
-                });
-            }
-        }
-
-        // --- Merge Manual Games ---
-        for (const mg of manualGames) {
-            const existing = aggregatedMap.get(mg.player_name);
-            const mgLegs = mg.legs_total;
-            const halfLegs = mgLegs / 2;
-            const mgWins = (mg.game1_win ? 1 : 0) + (mg.game2_win ? 1 : 0);
-
-            const mgWeightedTotal = (mg.game1_avg * halfLegs) + (mg.game2_avg * halfLegs);
-            const mgWeighted9 = (mg.game1_avg_9 * halfLegs) + (mg.game2_avg_9 * halfLegs);
-            const mgWeighted18 = (mg.game1_avg_18 * halfLegs) + (mg.game2_avg_18 * halfLegs);
-
-            if (existing) {
-                existing.wins += mgWins;
-                existing.legs_won += halfLegs;
-                existing.legs_lost += halfLegs;
-                existing.gespielte_single_spiele += 2;
-                existing.cnt_80 += mg.cnt_80;
-                existing.cnt_100 += mg.cnt_100;
-                existing.cnt_140 += mg.cnt_140;
-                existing.cnt_180 += mg.cnt_180;
-                existing.weighted_avg_total += mgWeightedTotal;
-                existing.weighted_avg_9 += mgWeighted9;
-                existing.weighted_avg_18 += mgWeighted18;
-                existing.total_legs_for_avg += mgLegs;
-            } else {
-                aggregatedMap.set(mg.player_name, {
-                    player_name: mg.player_name,
-                    verein: "Lions Weyhausen",
-                    wins: mgWins,
-                    legs_won: halfLegs,
-                    legs_lost: halfLegs,
-                    gespielte_single_spiele: 2,
-                    cnt_80: mg.cnt_80,
-                    cnt_100: mg.cnt_100,
-                    cnt_140: mg.cnt_140,
-                    cnt_180: mg.cnt_180,
-                    weighted_avg_total: mgWeightedTotal,
-                    weighted_avg_9: mgWeighted9,
-                    weighted_avg_18: mgWeighted18,
-                    total_legs_for_avg: mgLegs,
-                });
-            }
-        }
-
-        // --- Fetch Ranking Configuration ---
+        // 6. Fetch Ranking Configuration
         let config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
-        if (!config) {
-            config = {
-                weight_k1: 0.20,
-                weight_k2: 0.15,
-                weight_k3: 0.15,
-                weight_k4: 0.25,
-                weight_k5: 0.25
-            } as any;
-        }
+        const weights = config ? {
+            weight_k1: config.weight_k1,
+            weight_k2: config.weight_k2,
+            weight_k3: config.weight_k3,
+            weight_k4: config.weight_k4,
+            weight_k5: config.weight_k5,
+        } : DEFAULT_WEIGHTS;
 
-        // --- Compute ranking for each player ---
-        interface RankedPlayer {
-            player_name: string;
-            verein: string;
-            gespielte_single_spiele: number;
-            gespielte_legs: number;
-            avg_total: number;
-            avg_9: number;
-            avg_18: number;
-            wins: number;
-            games_played: number;
-            siegequote_pct: number;
-            cnt_80: number;
-            cnt_100: number;
-            cnt_140: number;
-            cnt_180: number;
-            sum_high_scores: number;
-            avg_high_per_leg: number;
-            points_k1: number;
-            points_k2: number;
-            points_k3: number;
-            points_k4: number;
-            points_k5: number;
-            total_points: number;
-        }
+        // 7. Compute Final Snapshot Values
+        const ranked = seasonalStats.map(p => {
+            const points_k1 = calculatePointsK1toK3(p.avg_total);
+            const points_k2 = calculatePointsK1toK3(p.avg_9);
+            const points_k3 = calculatePointsK1toK3(p.avg_18);
+            const points_k4 = calculatePointsK4(p.siegequote_pct);
+            const points_k5 = calculatePointsK5(p.avg_high_per_leg);
 
-        const ranked: RankedPlayer[] = Array.from(aggregatedMap.values()).map(p => {
-            const gespielte_legs = p.legs_won + p.legs_lost;
-            const avg_total = p.total_legs_for_avg > 0 ? p.weighted_avg_total / p.total_legs_for_avg : 0;
-            const avg_9 = p.total_legs_for_avg > 0 ? p.weighted_avg_9 / p.total_legs_for_avg : 0;
-            const avg_18 = p.total_legs_for_avg > 0 ? p.weighted_avg_18 / p.total_legs_for_avg : 0;
-
-            const sum_high_scores = p.cnt_80 + p.cnt_100 + p.cnt_140 + p.cnt_180;
-            const avg_high_per_leg = gespielte_legs > 0
-                ? Math.round((sum_high_scores / gespielte_legs) * 100) / 100 : 0;
-
-            const games_played = p.gespielte_single_spiele;
-            const siegequote_pct = games_played > 0
-                ? Math.round((p.wins / games_played) * 10000) / 100 : 0;
-
-            const points_k1 = calculatePointsK1toK3(avg_total);
-            const points_k2 = calculatePointsK1toK3(avg_9);
-            const points_k3 = calculatePointsK1toK3(avg_18);
-            const points_k4 = calculatePointsK4(siegequote_pct);
-            const points_k5 = calculatePointsK5(avg_high_per_leg);
-
-            // Apply dynamic weights
-            // Categories are 0-10 points. Weights sum to 1.0 (100%).
-            // (weighted_sum) gives a value between 0 and 10.
-            // Multiplying by 5 gives a total points range of 0-50 (consistent with 5 categories * 10 pts).
-            const weighted_sum =
-                (points_k1 * config!.weight_k1) +
-                (points_k2 * config!.weight_k2) +
-                (points_k3 * config!.weight_k3) +
-                (points_k4 * config!.weight_k4) +
-                (points_k5 * config!.weight_k5);
-
-            const final_total = Math.round(weighted_sum * 5 * 100) / 100;
+            const total_points = calculateWeightedTotal(
+                { p1: points_k1, p2: points_k2, p3: points_k3, p4: points_k4, p5: points_k5 },
+                weights
+            );
 
             return {
-                player_name: p.player_name,
-                verein: p.verein,
-                gespielte_single_spiele: games_played,
-                gespielte_legs,
-                avg_total,
-                avg_9,
-                avg_18,
-                wins: p.wins,
-                games_played,
-                siegequote_pct,
-                cnt_80: p.cnt_80,
-                cnt_100: p.cnt_100,
-                cnt_140: p.cnt_140,
-                cnt_180: p.cnt_180,
-                sum_high_scores,
-                avg_high_per_leg,
-                points_k1,
-                points_k2,
-                points_k3,
-                points_k4,
-                points_k5,
-                total_points: final_total,
+                ...p,
+                points_k1, points_k2, points_k3, points_k4, points_k5,
+                total_points,
             };
         });
 
-        // Sort descending by total_points
-        ranked.sort((a, b) => b.total_points - a.total_points);
+        // Sort descending
+        ranked.sort((a, b) => b.total_points - a.total_points || b.avg_total - a.avg_total);
 
-        // Save snapshot — upsert: keep only ONE snapshot per week
-        const weekId = getWeekId();
-
-        // Delete existing snapshots for this week (and their player values)
-        const existingSnapshots = await prisma.snapshot.findMany({
-            where: { week_id: weekId },
+        // 8. DB Cleanup and Save
+        const snapshotsToDelete = await prisma.snapshot.findMany({
+            where: {
+                OR: [
+                    { week_id: currentWeekId },
+                    { week_id: "Saison 2025/26 - Final" }
+                ]
+            },
             select: { snapshot_id: true }
         });
 
-        for (const old of existingSnapshots) {
-            await prisma.snapshotPlayerValue.deleteMany({
-                where: { snapshot_id: old.snapshot_id }
-            });
-            await prisma.snapshot.delete({
-                where: { snapshot_id: old.snapshot_id }
-            });
+        for (const old of snapshotsToDelete) {
+            await prisma.snapshotPlayerValue.deleteMany({ where: { snapshot_id: old.snapshot_id } });
+            await prisma.snapshot.delete({ where: { snapshot_id: old.snapshot_id } });
         }
 
         const snapshot = await prisma.snapshot.create({
-            data: { week_id: weekId, timestamp: new Date() }
+            data: { week_id: currentWeekId, timestamp: new Date() }
         });
 
         for (let i = 0; i < ranked.length; i++) {
@@ -460,26 +115,26 @@ export async function POST() {
                     snapshot_id: snapshot.snapshot_id,
                     player_name: p.player_name,
                     verein: p.verein,
-                    gespielte_single_spiele: p.gespielte_single_spiele,
-                    gespielte_legs: p.gespielte_legs,
-                    avg_total: p.avg_total,
-                    avg_9: p.avg_9,
-                    avg_18: p.avg_18,
-                    wins: p.wins,
-                    games_played: p.games_played,
-                    siegequote_pct: p.siegequote_pct,
-                    cnt_80: p.cnt_80,
-                    cnt_100: p.cnt_100,
-                    cnt_140: p.cnt_140,
-                    cnt_180: p.cnt_180,
-                    sum_high_scores: p.sum_high_scores,
-                    avg_high_per_leg: p.avg_high_per_leg,
-                    points_k1: p.points_k1,
-                    points_k2: p.points_k2,
-                    points_k3: p.points_k3,
-                    points_k4: p.points_k4,
-                    points_k5: p.points_k5,
-                    total_points: p.total_points,
+                    gespielte_single_spiele: p.gespielte_single_spiele || 0,
+                    gespielte_legs: p.gespielte_legs || 0,
+                    avg_total: p.avg_total || 0,
+                    avg_9: p.avg_9 || 0,
+                    avg_18: p.avg_18 || 0,
+                    wins: p.wins || 0,
+                    games_played: p.games_played || 0,
+                    siegequote_pct: p.siegequote_pct || 0,
+                    cnt_80: p.cnt_80 || 0,
+                    cnt_100: p.cnt_100 || 0,
+                    cnt_140: p.cnt_140 || 0,
+                    cnt_180: p.cnt_180 || 0,
+                    sum_high_scores: p.sum_high_scores || 0,
+                    avg_high_per_leg: p.avg_high_per_leg || 0,
+                    points_k1: p.points_k1 || 0,
+                    points_k2: p.points_k2 || 0,
+                    points_k3: p.points_k3 || 0,
+                    points_k4: p.points_k4 || 0,
+                    points_k5: p.points_k5 || 0,
+                    total_points: p.total_points || 0,
                     rank: i + 1,
                     source: 'webscraper',
                     veto_flag: false,
@@ -487,24 +142,17 @@ export async function POST() {
             });
         }
 
-        console.log(`[update-snapshot] Snapshot ${snapshot.snapshot_id} (${weekId}) saved with ${ranked.length} players`);
+        console.log(`[update-snapshot] Snapshot ${snapshot.snapshot_id} (${currentWeekId}) saved with ${ranked.length} players`);
 
         return NextResponse.json({
             success: true,
             snapshot_id: snapshot.snapshot_id,
-            week_id: weekId,
-            players_saved: ranked.length,
-            preview: ranked.slice(0, 10).map((p, i) => ({
-                rank: i + 1,
-                name: p.player_name,
-                team: p.verein,
-                total_points: p.total_points,
-            }))
+            week_id: currentWeekId,
+            players_saved: ranked.length
         });
 
     } catch (error) {
         console.error('[update-snapshot] Error:', error);
-        if (browser) await browser.close();
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
     }
 }

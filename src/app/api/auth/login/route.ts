@@ -32,7 +32,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            mustChange: userPw.must_change
+            mustChange: userPw.must_change,
+            role: userPw.role
         });
     } catch (error: any) {
         console.error('Login error:', error);

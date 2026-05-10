@@ -91,6 +91,11 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                 return;
             }
             localStorage.setItem(STORAGE_KEY, match);
+            if (data.role) {
+                localStorage.setItem('lions-auth-role', data.role);
+            } else {
+                localStorage.setItem('lions-auth-role', 'viewer');
+            }
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');
@@ -129,6 +134,11 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
             }
             // Success — log the user in
             localStorage.setItem(STORAGE_KEY, changeName);
+            if (data.role) {
+                localStorage.setItem('lions-auth-role', data.role);
+            } else {
+                localStorage.setItem('lions-auth-role', 'viewer');
+            }
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');

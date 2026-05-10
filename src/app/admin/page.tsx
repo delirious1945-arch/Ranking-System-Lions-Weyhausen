@@ -19,9 +19,11 @@ function AdminContent() {
 
     useEffect(() => {
         const storedName = localStorage.getItem('lions-auth-name');
-        if (storedName === 'Sebastian Kirste') {
+        const role = localStorage.getItem('lions-auth-role');
+        
+        if (role === 'admin') {
             setAuthorized(true);
-            setUserName(storedName);
+            setUserName(storedName || '');
         } else {
             setAuthorized(false);
             setUserName(storedName || '');
