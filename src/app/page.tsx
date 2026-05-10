@@ -224,6 +224,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           {activeTab === "overview" && (
             <>
               {/* RANKINGS */}
+              {/* Force new Vercel deploy */}
               {(() => {
                 const teamA = eligible.slice(0, 6);
                 // Team B gets the next 8 players (7 to 14) from the remaining list
