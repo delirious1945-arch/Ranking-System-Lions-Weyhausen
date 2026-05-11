@@ -31,7 +31,7 @@ export default async function SeasonRevealPage() {
             color: "#fff",
             fontFamily: "var(--font-inter), sans-serif",
             position: "relative",
-            padding: "40px 20px",
+            padding: "60px 20px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center"
@@ -47,25 +47,25 @@ export default async function SeasonRevealPage() {
             }} />
             
             <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes dropIn {
-                    0% { max-height: 0; opacity: 0; transform: translateY(-20px); margin-bottom: 0; }
-                    100% { max-height: 200px; opacity: 1; transform: translateY(0); margin-bottom: 16px; }
+                @keyframes slideDownReveal {
+                    0% { opacity: 0; transform: translateY(-30px); max-height: 0; margin-bottom: 0; }
+                    100% { opacity: 1; transform: translateY(0); max-height: 200px; margin-bottom: 16px; }
                 }
-                @keyframes winnerGlow {
-                    0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.2); }
-                    50% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.4); border-color: rgba(251, 191, 36, 0.6); }
+                @keyframes championGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.4); }
+                    50% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.6); border-color: rgba(251, 191, 36, 0.8); }
                 }
                 .reveal-row {
-                    max-height: 0;
                     opacity: 0;
+                    max-height: 0;
                     overflow: hidden;
-                    animation: dropIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                    animation: slideDownReveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
                 }
             ` }} />
 
             <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "800px" }}>
-                <div style={{ textAlign: "center", marginBottom: "40px" }}>
-                    <h1 style={{ fontSize: "48px", fontWeight: 950, margin: 0, letterSpacing: "-0.02em" }}>
+                <div style={{ textAlign: "center", marginBottom: "50px" }}>
+                    <h1 style={{ fontSize: "56px", fontWeight: 950, margin: 0, textTransform: "uppercase", letterSpacing: "-0.02em" }}>
                         SAISON-FINALE
                     </h1>
                     <p style={{ color: "#38bdf8", fontWeight: 800, letterSpacing: "0.2em", fontSize: "14px", marginTop: 8 }}>
@@ -73,11 +73,16 @@ export default async function SeasonRevealPage() {
                     </p>
                 </div>
 
-                {/* The List: Newest on Top */}
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                    {allPlayers.map((player) => {
+                {/* 
+                  Container with column-reverse: 
+                  The first child in the array will be at the bottom visually.
+                  We reverse the array, so Rank 19 is the first child -> it stays at the bottom.
+                  Rank 18 is the second child -> it appears ABOVE Rank 19.
+                */}
+                <div style={{ display: "flex", flexDirection: "column-reverse" }}>
+                    {[...allPlayers].reverse().map((player) => {
                         const isTop3 = player.rank <= 3;
-                        // Reverse delay: Rank 19 has delay 0, Rank 1 has (18 * 5s)
+                        // Rank 19 has delay 0, Rank 1 has (18 * 5s)
                         const delay = (totalPlayers - player.rank) * 5;
                         
                         return (
@@ -86,7 +91,7 @@ export default async function SeasonRevealPage() {
                                 className="reveal-row"
                                 style={{
                                     animationDelay: `${delay}s`,
-                                    background: isTop3 ? "rgba(251, 191, 36, 0.08)" : "rgba(15, 23, 42, 0.8)",
+                                    background: isTop3 ? "rgba(251, 191, 36, 0.1)" : "rgba(15, 23, 42, 0.8)",
                                     border: `1px solid ${isTop3 ? "rgba(251, 191, 36, 0.4)" : "rgba(255,255,255,0.08)"}`,
                                     borderRadius: "20px",
                                     padding: "24px 32px",
@@ -94,7 +99,7 @@ export default async function SeasonRevealPage() {
                                     alignItems: "center",
                                     justifyContent: "space-between",
                                     backdropFilter: "blur(20px)",
-                                    animation: `dropIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s forwards, ${player.rank === 1 ? 'winnerGlow 3s infinite' : ''}`
+                                    animation: `slideDownReveal 1s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s forwards, ${player.rank === 1 ? 'championGlow 3s infinite 90s' : ''}`
                                 }}
                             >
                                 <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
@@ -131,15 +136,13 @@ export default async function SeasonRevealPage() {
                 <div style={{ 
                     marginTop: "60px", 
                     textAlign: "center",
-                    animation: `dropIn 1.5s ${totalPlayers * 5}s forwards`,
+                    animation: `slideDownReveal 1.5s ${totalPlayers * 5}s forwards`,
                     opacity: 0
                 }}>
-                    <div style={{ marginBottom: "30px" }}>
-                        <Trophy size={64} color="#fbbf24" style={{ margin: "0 auto" }} />
-                        <h2 style={{ fontSize: "32px", fontWeight: 900, marginTop: 20 }}>WAHNSINNS LEISTUNG!</h2>
-                    </div>
-                    
+                    <Trophy size={64} color="#fbbf24" style={{ margin: "0 auto 20px" }} />
+                    <h2 style={{ fontSize: "32px", fontWeight: 900 }}>WAHNSINNS LEISTUNG!</h2>
                     <Link href="/" style={{
+                        marginTop: 30,
                         textDecoration: "none",
                         padding: "16px 40px",
                         background: "#fff",
