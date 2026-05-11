@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, TrendingUp, TrendingDown, Minus, ShieldAlert } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, Shield } from 'lucide-react';
 
 interface MatchStats {
   singleWins: number;
@@ -118,7 +118,7 @@ export default function PlayerProfile({ playerName, hinrunde, rueckrunde, trend,
           </div>
           <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
-                  <ShieldAlert className="w-6 h-6" />
+                  <Shield className="w-6 h-6" />
               </div>
               <div>
                   <div className="text-xs text-emerald-500/70 font-bold uppercase tracking-wider">Doppel Quote</div>
