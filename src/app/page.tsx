@@ -194,6 +194,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             const top180s = [...allValues].sort((a, b) => b.cnt_180 - a.cnt_180)[0];
             const topAvg = [...allValues].sort((a, b) => b.avg_total - a.avg_total)[0];
             const topHS = [...allValues].sort((a, b) => b.sum_high_scores - a.sum_high_scores)[0];
+            const topQuote = [...allValues].sort((a, b) => b.siegequote_pct - a.siegequote_pct)[0];
             
             const HighlightCard = ({ title, value, player, icon, color }: { title: string, value: string, player: string, icon: string, color: string }) => (
               <div style={{
@@ -220,7 +221,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 <HighlightCard title="Meiste 180er" value={String(top180s?.cnt_180 || 0)} player={top180s?.player_name || ""} icon="🎯" color="#f43f5e" />
                 <HighlightCard title="Bester Schnitt" value={(topAvg?.avg_total || 0).toFixed(1)} player={topAvg?.player_name || ""} icon="📈" color="#38bdf8" />
                 <HighlightCard title="Meiste Highscores" value={String(topHS?.sum_high_scores || 0)} player={topHS?.player_name || ""} icon="🔥" color="#fbbf24" />
-                <HighlightCard title="Top Siegquote" value={`${(allValues.sort((a,b) => b.siegequote_pct - a.siegequote_pct)[0]?.siegequote_pct || 0).toFixed(0)}%`} player={allValues.sort((a,b) => b.siegequote_pct - a.siegequote_pct)[0]?.player_name || ""} icon="🏆" color="#10b981" />
+                <HighlightCard title="Top Siegquote" value={`${(topQuote?.siegequote_pct || 0).toFixed(0)}%`} player={topQuote?.player_name || ""} icon="🏆" color="#10b981" />
               </>
             );
           })()}
