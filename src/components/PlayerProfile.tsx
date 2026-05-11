@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, ShieldAlert } from 'lucide-react';
 
 interface MatchStats {
   singleWins: number;
