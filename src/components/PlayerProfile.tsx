@@ -85,8 +85,6 @@ export default function PlayerProfile({ playerName, hinrunde, rueckrunde, trend,
         </div>
       </div>
 
-      {/* Bestleistungen removed */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatCard title="Hinrunde (Spieltag 1-9)" stats={hinrunde} colorClass="text-indigo-400" />
         <StatCard title="Rückrunde (Spieltag 10+)" stats={rueckrunde} colorClass="text-emerald-400" />
