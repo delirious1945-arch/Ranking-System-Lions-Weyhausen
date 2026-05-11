@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 import PlayerManualGames from "@/components/PlayerManualGames";
-import PlayerProfile from "@/components/PlayerProfile";
 
 export default async function PlayerHistoryPage(
     props: { params: Promise<{ player_name: string }> }
@@ -102,15 +101,6 @@ export default async function PlayerHistoryPage(
                 </div>
             </div>
 
-            {/* NEW: Seasonal Performance Template */}
-            <PlayerProfile 
-                playerName={decodePlayerName}
-                hinrunde={seasonalStats.hinrunde}
-                rueckrunde={seasonalStats.rueckrunde}
-                trend={seasonalStats.trend}
-                highFinish={seasonalStats.highFinish}
-                total180s={seasonalStats.total180s}
-            />
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
