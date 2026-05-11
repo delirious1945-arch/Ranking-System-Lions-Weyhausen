@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 import PlayerManualGames from "@/components/PlayerManualGames";
+import PlayerProfile from "@/components/PlayerProfile";
 
 export default async function PlayerHistoryPage(
     props: { params: Promise<{ player_name: string }> }
@@ -13,6 +14,12 @@ export default async function PlayerHistoryPage(
         where: { player_name: decodePlayerName },
         include: { snapshot: true },
         orderBy: { snapshot: { timestamp: 'asc' } }
+    });
+
+    // Fetch individual match records for Hin/Rückrunde and Trend
+    const matches = await prisma.matchRecord.findMany({
+        where: { playerName: decodePlayerName },
+        orderBy: { date: 'asc' }
     });
 
     // Deduplicate: keep only the newest entry per week_id
@@ -56,8 +63,28 @@ export default async function PlayerHistoryPage(
 
     const latest = dedupedHistory[dedupedHistory.length - 1];
 
+    // Calculate seasonal stats from matches
+    const hinrundeMatches = matches.filter(m => m.spieltag <= 9);
+    const rueckrundeMatches = matches.filter(m => m.spieltag > 9);
+
+    const seasonalStats = {
+        hinrunde: {
+            singleWins: hinrundeMatches.filter(m => !m.isDouble && m.won).length,
+            singleTotal: hinrundeMatches.filter(m => !m.isDouble).length,
+            doubleWins: hinrundeMatches.filter(m => m.isDouble && m.won).length,
+            doubleTotal: hinrundeMatches.filter(m => m.isDouble).length,
+        },
+        rueckrunde: {
+            singleWins: rueckrundeMatches.filter(m => !m.isDouble && m.won).length,
+            singleTotal: rueckrundeMatches.filter(m => !m.isDouble).length,
+            doubleWins: rueckrundeMatches.filter(m => m.isDouble && m.won).length,
+            doubleTotal: rueckrundeMatches.filter(m => m.isDouble).length,
+        },
+        trend: matches.slice(-8).map(m => m.won)
+    };
+
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
 
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
@@ -65,7 +92,7 @@ export default async function PlayerHistoryPage(
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3">
+                    <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
                         {decodePlayerName}
                         {veto && <span title="Veto Aktiv"><ShieldAlert className="w-6 h-6 text-amber-500" /></span>}
                     </h1>
@@ -73,10 +100,18 @@ export default async function PlayerHistoryPage(
                 </div>
             </div>
 
+            {/* NEW: Seasonal Performance Template */}
+            <PlayerProfile 
+                playerName={decodePlayerName}
+                hinrunde={seasonalStats.hinrunde}
+                rueckrunde={seasonalStats.rueckrunde}
+                trend={seasonalStats.trend}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* KPI Widget */}
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                         <Target className="w-5 h-5 text-indigo-400" />
                         Aktuelle Statistiken ({latest.snapshot.week_id})
                     </h3>
@@ -102,7 +137,7 @@ export default async function PlayerHistoryPage(
 
                 {/* History Table Widget */}
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden flex flex-col">
-                    <h3 className="text-lg font-bold mb-4">Wochen-Historie (Deltas)</h3>
+                    <h3 className="text-lg font-bold mb-4 text-white">Wochen-Historie (Deltas)</h3>
                     <div className="overflow-x-auto flex-1 custom-scrollbar">
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="text-slate-500 border-b border-slate-800">
@@ -138,7 +173,7 @@ export default async function PlayerHistoryPage(
                                                 )}
                                             </td>
                                             <td className="py-3 text-right">
-                                                <span>{h.avg_total.toFixed(2)}</span>
+                                                <span className="text-white">{h.avg_total.toFixed(2)}</span>
                                                 {avgDelta !== 0 && (
                                                     <span className={`ml-2 text-xs ${avgDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                         {avgDelta > 0 ? '+' : ''}{avgDelta.toFixed(1)}
@@ -157,7 +192,7 @@ export default async function PlayerHistoryPage(
 
             {/* Match Statistics Widget (Aggregate) */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                     <Target className="w-5 h-5 text-emerald-400" />
                     Detail-Statistiken (Saison Total)
                 </h3>
