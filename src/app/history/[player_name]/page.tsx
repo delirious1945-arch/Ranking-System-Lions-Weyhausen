@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 import PlayerManualGames from "@/components/PlayerManualGames";
 import PlayerProfile from "@/components/PlayerProfile";
-import PlayerCorrectionForm from "@/components/PlayerCorrectionForm";
 
 export default async function PlayerHistoryPage(
     props: { params: Promise<{ player_name: string }> }
@@ -113,7 +112,6 @@ export default async function PlayerHistoryPage(
                 total180s={seasonalStats.total180s}
             />
 
-            <PlayerCorrectionForm playerName={decodePlayerName} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* KPI Widget */}

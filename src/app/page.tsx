@@ -179,54 +179,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      {/* NEW: Saison Highlights / Bestleistungen Section */}
-      {allValues.length > 0 && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 16,
-          marginTop: -20,
-          position: "relative",
-          zIndex: 10,
-          padding: "0 10px"
-        }}>
-          {(() => {
-            const top180s = [...allValues].sort((a, b) => b.cnt_180 - a.cnt_180)[0];
-            const topAvg = [...allValues].sort((a, b) => b.avg_total - a.avg_total)[0];
-            const topHS = [...allValues].sort((a, b) => b.sum_high_scores - a.sum_high_scores)[0];
-            const topQuote = [...allValues].sort((a, b) => b.siegequote_pct - a.siegequote_pct)[0];
-            
-            const HighlightCard = ({ title, value, player, icon, color }: { title: string, value: string, player: string, icon: string, color: string }) => (
-              <div style={{
-                background: "rgba(15, 23, 42, 0.8)",
-                backdropFilter: "blur(12px)",
-                border: `1px solid ${color}33`,
-                borderRadius: 16,
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                boxShadow: `0 10px 30px -10px rgba(0,0,0,0.5), 0 0 20px ${color}11`
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: color, textTransform: "uppercase", letterSpacing: "0.1em" }}>{title}</div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{value}</div>
-                  <div style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 600 }}>{player}</div>
-                </div>
-              </div>
-            );
-
-            return (
-              <>
-                <HighlightCard title="Meiste 180er" value={String(top180s?.cnt_180 || 0)} player={top180s?.player_name || ""} icon="🎯" color="#f43f5e" />
-                <HighlightCard title="Bester Schnitt" value={(topAvg?.avg_total || 0).toFixed(1)} player={topAvg?.player_name || ""} icon="📈" color="#38bdf8" />
-                <HighlightCard title="Meiste Highscores" value={String(topHS?.sum_high_scores || 0)} player={topHS?.player_name || ""} icon="🔥" color="#fbbf24" />
-                <HighlightCard title="Top Siegquote" value={`${(topQuote?.siegequote_pct || 0).toFixed(0)}%`} player={topQuote?.player_name || ""} icon="🏆" color="#10b981" />
-              </>
-            );
-          })()}
-        </div>
-      )}
+      {/* Highlights removed */}
 
 
 
