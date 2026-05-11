@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { Trophy } from "lucide-react";
 
 
 interface PageProps {
@@ -175,6 +176,25 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           }}>
             ABSCHLUSSRANKING - FINAL
           </p>
+
+          <Link href="/nomination" style={{
+            marginTop: 24,
+            padding: "10px 24px",
+            background: "linear-gradient(45deg, #fbbf24, #f59e0b)",
+            color: "#000",
+            textDecoration: "none",
+            borderRadius: 12,
+            fontSize: 13,
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            boxShadow: "0 10px 20px -5px rgba(245, 158, 11, 0.4)",
+            transition: "all 0.2s"
+          }}>
+            <Trophy size={16} />
+            A-TEAM NOMINIERUNG STARTEN
+          </Link>
 
         </div>
       </div>
