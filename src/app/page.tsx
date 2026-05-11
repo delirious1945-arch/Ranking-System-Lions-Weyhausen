@@ -1,3 +1,4 @@
+// Final Build Trigger - Force Sync
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Trophy, Users } from "lucide-react";
