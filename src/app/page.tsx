@@ -276,8 +276,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               {/* Force new Vercel deploy */}
               {(() => {
                 const teamA = eligible.slice(0, 6);
-                // Team B gets the next 8 players (7 to 14) from the remaining list
-                const teamB = allValues.filter(p => !teamA.some(a => a.id === p.id)).slice(0, 8);
+                // Team B gets the next 12 players (7 to 18) from the remaining list
+                const teamB = allValues.filter(p => !teamA.some(a => a.id === p.id)).slice(0, 12);
                 
                 const RankingTable = ({ players, title, color, bg }: { players: any[], title: string, color: string, bg: string }) => (
                   <section style={{ flex: 1, minWidth: 0 }}>
@@ -375,7 +375,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                       <h3 style={{ fontSize: 18, fontWeight: 800, margin: "10px 0 0 0" }}>Team-Aufstellung</h3>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
                         <RankingTable players={teamA} title="A-Team (Pl. 1-6)" color="var(--rank-top5)" bg="var(--rank-top5-bg)" />
-                        <RankingTable players={teamB} title="B-Team (Pl. 7-14)" color="var(--rank-6to10)" bg="var(--rank-6to10-bg)" />
+                        <RankingTable players={teamB} title="B-Team (Pl. 7-18)" color="var(--rank-6to10)" bg="var(--rank-6to10-bg)" />
                       </div>
                     </div>
                   </div>
