@@ -80,7 +80,9 @@ export default async function PlayerHistoryPage(
             doubleWins: rueckrundeMatches.filter(m => m.isDouble && m.won).length,
             doubleTotal: rueckrundeMatches.filter(m => m.isDouble).length,
         },
-        trend: matches.slice(-8).map(m => m.won)
+        trend: matches.slice(-8).map(m => m.won),
+        highFinish: Math.max(...matches.map(m => m.checkoutMax || 0), 0),
+        total180s: matches.reduce((sum, m) => sum + (m.count180 || 0), 0)
     };
 
     return (
@@ -106,6 +108,8 @@ export default async function PlayerHistoryPage(
                 hinrunde={seasonalStats.hinrunde}
                 rueckrunde={seasonalStats.rueckrunde}
                 trend={seasonalStats.trend}
+                highFinish={seasonalStats.highFinish}
+                total180s={seasonalStats.total180s}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -164,10 +164,9 @@ export async function updateMatchCache() {
 export async function getAggregateStatsUpTo(upToSpieltag: number) {
     console.log(`[MatchService] Aggregating seasonal stats up to Spieltag ${upToSpieltag}...`);
 
-    // 1. Get all match records up to this Spieltag
+    // 1. Get all match records up to this Spieltag (Singles and Doubles)
     const records = await prisma.matchRecord.findMany({
         where: { 
-            isDouble: false,
             spieltag: { lte: upToSpieltag }
         }
     });
@@ -219,26 +218,33 @@ export async function getAggregateStatsUpTo(upToSpieltag: number) {
         if (!players[canonical]) return; // Skip if not in LIONS list
         
         const p = players[canonical];
-        p.dartsTotal += (data.dartsTotal || 0);
-        p.scoreTotal += (data.scoreTotal || 0);
-        p.darts9 += (data.darts9 || 0);
-        p.score9 += (data.score9 || 0);
-        p.darts18 += (data.darts18 || 0);
-        p.score18 += (data.score18 || 0);
-        if (data.won) p.wins++;
-        p.games_played++;
-        p.gespielte_single_spiele++;
-        p.legs_won += (data.legsWon || 0);
-        p.legs_total += ((data.legsWon || 0) + (data.legsLost || 0));
+        const isDouble = !!data.isDouble;
+
+        // Basic high scores from ALL matches (Singles & Doubles)
         p.cnt_80 += (data.count80 || 0);
         p.cnt_100 += (data.count100 || 0);
         p.cnt_140 += (data.count140 || 0);
         p.cnt_180 += (data.count180 || 0);
         
-        // Accumulate averages for "Average of Averages" logic
-        p.avg_total_sum += (data.avgTotal || 0);
-        p.avg_9_sum += (data.avg9 || 0);
-        p.avg_18_sum += (data.avg18 || 0);
+        // Metrics that are only for SINGLES (as per ranking rules)
+        if (!isDouble) {
+            p.dartsTotal += (data.dartsTotal || 0);
+            p.scoreTotal += (data.scoreTotal || 0);
+            p.darts9 += (data.darts9 || 0);
+            p.score9 += (data.score9 || 0);
+            p.darts18 += (data.darts18 || 0);
+            p.score18 += (data.score18 || 0);
+            if (data.won) p.wins++;
+            p.games_played++;
+            p.gespielte_single_spiele++;
+            p.legs_won += (data.legsWon || 0);
+            p.legs_total += ((data.legsWon || 0) + (data.legsLost || 0));
+            
+            // Accumulate averages for "Average of Averages" logic
+            p.avg_total_sum += (data.avgTotal || 0);
+            p.avg_9_sum += (data.avg9 || 0);
+            p.avg_18_sum += (data.avg18 || 0);
+        }
     };
 
     // Aggregate from 3k-Darts
