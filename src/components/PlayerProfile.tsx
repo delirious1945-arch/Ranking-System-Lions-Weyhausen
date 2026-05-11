@@ -96,37 +96,7 @@ export default function PlayerProfile({ playerName, hinrunde, rueckrunde, trend,
                   <div className="text-2xl font-black text-white">{highFinish || '-'}</div>
               </div>
           </div>
-          <div className="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 rounded-2xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center text-rose-400">
-                  <span className="text-xl font-black">180</span>
-              </div>
-              <div>
-                  <div className="text-xs text-rose-500/70 font-bold uppercase tracking-wider">Gesamt 180er</div>
-                  <div className="text-2xl font-black text-white">{total180s || '0'}</div>
-              </div>
-          </div>
-          <div className="bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 rounded-2xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
-                  <TrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                  <div className="text-xs text-indigo-500/70 font-bold uppercase tracking-wider">Single Quote</div>
-                  <div className="text-2xl font-black text-white">
-                      {((hinrunde.singleWins + rueckrunde.singleWins) / Math.max(1, (hinrunde.singleTotal + rueckrunde.singleTotal)) * 100).toFixed(0)}%
-                  </div>
-              </div>
-          </div>
-          <div className="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
-                  <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                  <div className="text-xs text-emerald-500/70 font-bold uppercase tracking-wider">Doppel Quote</div>
-                  <div className="text-2xl font-black text-white">
-                      {((hinrunde.doubleWins + rueckrunde.doubleWins) / Math.max(1, (hinrunde.doubleTotal + rueckrunde.doubleTotal)) * 100).toFixed(0)}%
-                  </div>
-              </div>
-          </div>
+          {/* Other cards removed as requested */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
