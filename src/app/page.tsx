@@ -298,65 +298,93 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                       <div style={{ height: 1, flex: 1, background: bg }} />
                       <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{players.length} Spieler</span>
                     </div>
-                    <div style={{ borderRadius: 10, border: `1px solid ${bg}`, overflow: "hidden", background: "var(--bg-card)" }}>
+                    <div style={{ borderRadius: 16, border: `1px solid ${bg}`, overflow: "hidden", background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(10px)" }}>
                       <table className="dart-table">
                         <thead>
                           <tr>
-                            <th style={{ width: 36 }}>#</th>
+                            <th style={{ width: 36, textAlign: "center" }}>#</th>
                             <th>Spieler</th>
-                            <th style={{ textAlign: "right" }}>Pkt</th>
-                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ Avg</th>
-                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 9D</th>
-                            <th className="hide-mobile" style={{ textAlign: "right" }}>∅ 18D</th>
-                            <th className="hide-mobile" style={{ textAlign: "right" }}>Sieg%</th>
-                            <th className="hide-mobile" style={{ textAlign: "right" }}>HS/L</th>
+                            <th style={{ textAlign: "right", width: 90 }}>Punkte</th>
+                            <th className="hide-mobile" style={{ textAlign: "center", width: 180 }}>Verteilung (🎯 / 🏆 / 🔥)</th>
+                            <th className="hide-mobile" style={{ textAlign: "right" }}>Siegquote</th>
                           </tr>
                         </thead>
                         <tbody>
                           {players.map((p) => {
                             const isVeto = vetoSet.has(p.player_name);
+                            // Visual Weight Calculation (relative contribution)
+                            const k13_sum = (p.points_k1 + p.points_k2 + p.points_k3);
+                            const k4_val = p.points_k4;
+                            const k5_val = p.points_k5;
+                            const total_points_sum = k13_sum + k4_val + k5_val || 1;
+
                             return (
-                            <tr key={p.id} style={{ opacity: isVeto && title !== "Gesamtranking" ? 0.7 : 1 }}>
-                              <td>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: color }}>
-                                  {p.rank}
-                                </span>
-                              </td>
-                              <td>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
-                                      textDecoration: "none",
-                                      fontWeight: 700,
-                                      color: "var(--text)",
-                                      fontSize: 13,
-                                    }}>
-                                      {p.player_name}
-                                    </Link>
-                                    {isVeto && title !== "Gesamtranking" && <span style={{ fontSize: 9, color: "var(--amber)", background: "var(--amber-muted)", padding: "1px 4px", borderRadius: 3, fontWeight: 700 }}>VETO</span>}
-                                  </div>
-                                  <span className="show-mobile-only" style={{ fontSize: 10, color: "var(--text-dim)" }}>
-                                    {p.total_points} Pkt · {p.siegequote_pct.toFixed(0)}%
+                              <tr key={p.id} style={{ opacity: isVeto && title !== "Gesamtranking" ? 0.7 : 1 }}>
+                                <td style={{ textAlign: "center" }}>
+                                  <span style={{ fontSize: 15, fontWeight: 900, color: color, opacity: 0.8 }}>
+                                    {p.rank}
                                   </span>
-                                </div>
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                <span style={{
-                                  padding: "3px 8px", borderRadius: 5,
-                                  background: bg, color: color,
-                                  fontWeight: 800, fontSize: 13,
-                                }}>
-                                  {p.total_points}
-                                </span>
-                              </td>
-                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text)" }}>{p.avg_total.toFixed(1)}</td>
-                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_9.toFixed(1)}</td>
-                              <td className="hide-mobile" style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_18.toFixed(1)}</td>
-                              <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.siegequote_pct.toFixed(0)}%</td>
-                              <td className="hide-mobile" style={{ textAlign: "right", fontSize: 12, color: "var(--text-muted)" }}>{p.avg_high_per_leg.toFixed(2)}</td>
-                            </tr>
-                          );
-                        })}
+                                </td>
+                                <td>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                      <Link href={`/history/${encodeURIComponent(p.player_name)}`} style={{
+                                        textDecoration: "none",
+                                        fontWeight: 800,
+                                        color: "#fff",
+                                        fontSize: "14px",
+                                      }}>
+                                        {p.player_name}
+                                      </Link>
+                                      {isVeto && title !== "Gesamtranking" && <span style={{ fontSize: 9, color: "#f59e0b", background: "rgba(245, 158, 11, 0.1)", padding: "1px 6px", borderRadius: 4, fontWeight: 800, border: "1px solid rgba(245, 158, 11, 0.2)" }}>VETO</span>}
+                                    </div>
+                                    <div style={{ display: "flex", gap: 8, fontSize: "11px", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
+                                      <span>∅ {p.avg_total.toFixed(1)}</span>
+                                      <span>•</span>
+                                      <span>{p.wins} Siege</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: "right" }}>
+                                  <div style={{
+                                    display: "inline-block",
+                                    padding: "6px 12px",
+                                    borderRadius: "10px",
+                                    background: "rgba(255,255,255,0.05)",
+                                    border: `1px solid ${bg}`,
+                                    color: color,
+                                    fontWeight: 900,
+                                    fontSize: "16px",
+                                    boxShadow: `0 4px 12px ${bg}`
+                                  }}>
+                                    {p.total_points.toFixed(2)}
+                                  </div>
+                                </td>
+                                <td className="hide-mobile" style={{ textAlign: "center", verticalAlign: "middle" }}>
+                                  <div style={{ 
+                                    width: "140px", 
+                                    height: "8px", 
+                                    background: "rgba(255,255,255,0.05)", 
+                                    borderRadius: "10px", 
+                                    margin: "0 auto",
+                                    display: "flex",
+                                    overflow: "hidden",
+                                    border: "1px solid rgba(255,255,255,0.05)"
+                                  }}>
+                                    <div style={{ width: `${(k13_sum / total_points_sum) * 100}%`, background: "#38bdf8", transition: "width 1s ease" }} title="Average Points" />
+                                    <div style={{ width: `${(k4_val / total_points_sum) * 100}%`, background: "#fbbf24", transition: "width 1s ease" }} title="Win Rate Points" />
+                                    <div style={{ width: `${(k5_val / total_points_sum) * 100}%`, background: "#f43f5e", transition: "width 1s ease" }} title="Highscore Points" />
+                                  </div>
+                                </td>
+                                <td className="hide-mobile" style={{ textAlign: "right" }}>
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                                    <span style={{ fontWeight: 700, color: "#fff", fontSize: "13px" }}>{p.siegequote_pct.toFixed(0)}%</span>
+                                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>Quote</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
