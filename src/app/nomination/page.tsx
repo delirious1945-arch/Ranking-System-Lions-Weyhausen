@@ -82,7 +82,7 @@ export default async function NominationPage() {
                         key={player.id} 
                         className="nomination-card"
                         style={{
-                            animationDelay: `${index * 0.1}s`,
+                            animationDelay: `${index * 5}s`,
                             background: "rgba(15, 23, 42, 0.6)",
                             border: `1px solid ${player.rank === 1 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`,
                             borderRadius: "20px",
