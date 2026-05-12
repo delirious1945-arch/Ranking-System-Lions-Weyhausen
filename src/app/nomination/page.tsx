@@ -141,10 +141,17 @@ export default async function NominationPage() {
                             gap: 12,
                             fontSize: "11px",
                             color: "#94a3b8",
-                            fontWeight: 600
+                            fontWeight: 600,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4
                         }}>
                             <div>AVG: <span style={{ color: "#fff" }}>{player.avg_total.toFixed(1)}</span></div>
-                            <div>SIEGE: <span style={{ color: "#fff" }}>{player.wins}</span></div>
+                            <div>
+                                SIEGE: <span style={{ color: "#fff" }}>{player.wins}</span> 
+                                <span style={{ margin: "0 6px", opacity: 0.3 }}>|</span>
+                                <span style={{ color: "#38bdf8" }}>{player.siegequote_pct.toFixed(1)}%</span>
+                            </div>
                         </div>
                     </div>
                 ))}

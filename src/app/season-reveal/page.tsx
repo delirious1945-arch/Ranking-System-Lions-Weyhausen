@@ -182,6 +182,15 @@ export default async function SeasonRevealPage() {
                     </Link>
                 </div>
             </div>
+            
+            {/* Automatic Redirect to Nomination after animation + 60s buffer */}
+            <script dangerouslySetInnerHTML={{ __html: `
+                // Total animation time: (19 players * 5s) = 95s
+                // Plus 60s buffer as requested = 155s total from start
+                setTimeout(() => {
+                    window.location.href = '/nomination';
+                }, 155000);
+            ` }} />
         </div>
     );
 }
