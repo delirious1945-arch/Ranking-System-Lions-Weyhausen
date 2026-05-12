@@ -1,5 +1,5 @@
-import { prisma } from '../src/lib/prisma.ts';
-import * as scoring from '../src/lib/scoring.ts';
+import { prisma } from '../src/lib/prisma';
+import * as scoring from '../src/lib/scoring';
 import fs from 'fs';
 import path from 'path';
 
