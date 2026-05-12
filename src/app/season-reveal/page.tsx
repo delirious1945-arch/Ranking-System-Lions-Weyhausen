@@ -31,10 +31,11 @@ export default async function SeasonRevealPage() {
             color: "#fff",
             fontFamily: "var(--font-inter), sans-serif",
             position: "relative",
-            padding: "60px 20px",
+            padding: "40px 20px",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center"
+            alignItems: "center",
+            overflow: "hidden" // Prevent overall page scroll to keep focus
         }}>
             <div style={{
                 position: "fixed",
@@ -47,42 +48,54 @@ export default async function SeasonRevealPage() {
             }} />
             
             <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes slideDownReveal {
-                    0% { opacity: 0; transform: translateY(-30px); max-height: 0; margin-bottom: 0; }
-                    100% { opacity: 1; transform: translateY(0); max-height: 200px; margin-bottom: 16px; }
+                @keyframes pushDownReveal {
+                    0% { max-height: 0; opacity: 0; transform: translateY(-40px) scale(0.95); margin-bottom: 0; }
+                    100% { max-height: 250px; opacity: 1; transform: translateY(0) scale(1); margin-bottom: 16px; }
                 }
-                @keyframes championGlow {
-                    0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.4); }
-                    50% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.6); border-color: rgba(251, 191, 36, 0.8); }
+                @keyframes activeCardGlow {
+                    0% { border-color: #38bdf8; box-shadow: 0 0 30px rgba(56, 189, 248, 0.4); }
+                    100% { border-color: rgba(255,255,255,0.08); box-shadow: none; }
+                }
+                @keyframes winnerFinalGlow {
+                    0%, 100% { border-color: #fbbf24; box-shadow: 0 0 40px rgba(251, 191, 36, 0.3); }
+                    50% { border-color: #f59e0b; box-shadow: 0 0 60px rgba(251, 191, 36, 0.6); }
                 }
                 .reveal-row {
-                    opacity: 0;
                     max-height: 0;
+                    opacity: 0;
                     overflow: hidden;
-                    animation: slideDownReveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                    animation: pushDownReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                    width: 100%;
+                }
+                .glow-effect {
+                    /* Only glow for the 5 seconds until the next one arrives */
+                    animation: activeCardGlow 5s ease-out forwards;
+                }
+                .winner-final {
+                    animation: winnerFinalGlow 3s infinite !important;
                 }
             ` }} />
 
-            <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "800px" }}>
-                <div style={{ textAlign: "center", marginBottom: "50px" }}>
-                    <h1 style={{ fontSize: "56px", fontWeight: 950, margin: 0, textTransform: "uppercase", letterSpacing: "-0.02em" }}>
+            <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "850px" }}>
+                <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                    <h1 style={{ fontSize: "52px", fontWeight: 950, margin: 0, textTransform: "uppercase", letterSpacing: "-0.01em" }}>
                         SAISON-FINALE
                     </h1>
-                    <p style={{ color: "#38bdf8", fontWeight: 800, letterSpacing: "0.2em", fontSize: "14px", marginTop: 8 }}>
+                    <p style={{ color: "#38bdf8", fontWeight: 800, letterSpacing: "0.2em", fontSize: "14px", marginTop: 6 }}>
                         DER COUNTDOWN LÄUFT...
                     </p>
                 </div>
 
-                {/* 
-                  Container with column-reverse: 
-                  The first child in the array will be at the bottom visually.
-                  We reverse the array, so Rank 19 is the first child -> it stays at the bottom.
-                  Rank 18 is the second child -> it appears ABOVE Rank 19.
-                */}
-                <div style={{ display: "flex", flexDirection: "column-reverse" }}>
-                    {[...allPlayers].reverse().map((player) => {
+                {/* Fixed container - the list grows from the top down */}
+                <div style={{ 
+                    display: "flex", 
+                    flexDirection: "column",
+                    alignItems: "center"
+                }}>
+                    {allPlayers.map((player) => {
                         const isTop3 = player.rank <= 3;
-                        // Rank 19 has delay 0, Rank 1 has (18 * 5s)
+                        const isWinner = player.rank === 1;
+                        // Delay: Rank 19 has 0s, Rank 18 has 5s, etc.
                         const delay = (totalPlayers - player.rank) * 5;
                         
                         return (
@@ -91,42 +104,50 @@ export default async function SeasonRevealPage() {
                                 className="reveal-row"
                                 style={{
                                     animationDelay: `${delay}s`,
-                                    background: isTop3 ? "rgba(251, 191, 36, 0.1)" : "rgba(15, 23, 42, 0.8)",
-                                    border: `1px solid ${isTop3 ? "rgba(251, 191, 36, 0.4)" : "rgba(255,255,255,0.08)"}`,
-                                    borderRadius: "20px",
-                                    padding: "24px 32px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    backdropFilter: "blur(20px)",
-                                    animation: `slideDownReveal 1s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s forwards, ${player.rank === 1 ? 'championGlow 3s infinite 90s' : ''}`
                                 }}
                             >
-                                <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-                                    <div style={{ 
-                                        fontSize: isTop3 ? "36px" : "24px", 
-                                        fontWeight: 950, 
-                                        color: isTop3 ? "#fbbf24" : "#475569",
-                                        minWidth: "60px"
-                                    }}>
-                                        #{player.rank}
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: isTop3 ? "24px" : "18px", fontWeight: 800, color: "#fff" }}>
-                                            {player.player_name}
+                                <div 
+                                    className={`glow-effect ${isWinner ? 'winner-final' : ''}`}
+                                    style={{
+                                        animationDelay: `${delay}s`,
+                                        background: isTop3 ? "rgba(251, 191, 36, 0.08)" : "rgba(15, 23, 42, 0.85)",
+                                        border: `1px solid rgba(255,255,255,0.08)`,
+                                        borderRadius: "24px",
+                                        padding: "28px 40px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        backdropFilter: "blur(20px)",
+                                        marginBottom: "4px"
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+                                        <div style={{ 
+                                            fontSize: isTop3 ? "42px" : "28px", 
+                                            fontWeight: 950, 
+                                            color: isTop3 ? "#fbbf24" : "#475569",
+                                            minWidth: "70px",
+                                            fontStyle: "italic"
+                                        }}>
+                                            #{player.rank}
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", color: "#94a3b8", marginTop: 4 }}>
-                                            <Clock size={14} className="text-sky-500" />
-                                            Anwesenheit: <span style={{ color: "#e2e8f0", fontWeight: 700 }}>{attendanceMap[player.player_name] || "k.A."}</span>
+                                        <div>
+                                            <div style={{ fontSize: isTop3 ? "28px" : "22px", fontWeight: 800, color: "#fff" }}>
+                                                {player.player_name}
+                                            </div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "14px", color: "#94a3b8", marginTop: 6, fontWeight: 600 }}>
+                                                <Clock size={16} className="text-sky-500" />
+                                                Anwesenheit: <span style={{ color: "#e2e8f0" }}>{attendanceMap[player.player_name] || "0%"}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div style={{ textAlign: "right" }}>
-                                    <div style={{ fontSize: isTop3 ? "32px" : "22px", fontWeight: 950, color: isTop3 ? "#fbbf24" : "#38bdf8" }}>
-                                        {player.total_points.toFixed(2)}
+                                    <div style={{ textAlign: "right" }}>
+                                        <div style={{ fontSize: isTop3 ? "36px" : "26px", fontWeight: 950, color: isTop3 ? "#fbbf24" : "#38bdf8", lineHeight: 1 }}>
+                                            {player.total_points.toFixed(2)}
+                                        </div>
+                                        <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 800, letterSpacing: "0.1em", marginTop: 6 }}>PUNKTE</div>
                                     </div>
-                                    <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 800 }}>PUNKTE</div>
                                 </div>
                             </div>
                         );
@@ -134,27 +155,30 @@ export default async function SeasonRevealPage() {
                 </div>
 
                 <div style={{ 
-                    marginTop: "60px", 
+                    marginTop: "80px", 
                     textAlign: "center",
-                    animation: `slideDownReveal 1.5s ${totalPlayers * 5}s forwards`,
-                    opacity: 0
+                    animation: `pushDownReveal 1.5s ${totalPlayers * 5}s forwards`,
+                    opacity: 0,
+                    paddingBottom: "100px"
                 }}>
-                    <Trophy size={64} color="#fbbf24" style={{ margin: "0 auto 20px" }} />
-                    <h2 style={{ fontSize: "32px", fontWeight: 900 }}>WAHNSINNS LEISTUNG!</h2>
+                    <Trophy size={80} color="#fbbf24" style={{ margin: "0 auto 24px" }} />
+                    <h2 style={{ fontSize: "36px", fontWeight: 950 }}>SAISON ABGESCHLOSSEN!</h2>
                     <Link href="/" style={{
-                        marginTop: 30,
+                        marginTop: 40,
                         textDecoration: "none",
-                        padding: "16px 40px",
+                        padding: "20px 50px",
                         background: "#fff",
                         color: "#000",
-                        borderRadius: "14px",
+                        borderRadius: "18px",
                         fontWeight: 900,
+                        fontSize: "18px",
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: 12
+                        gap: 15,
+                        boxShadow: "0 20px 40px rgba(0,0,0,0.5)"
                     }}>
-                        <ArrowLeft size={20} />
-                        DASHBOARD
+                        <ArrowLeft size={22} />
+                        ZURÜCK ZUM DASHBOARD
                     </Link>
                 </div>
             </div>
