@@ -179,43 +179,26 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           </p>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-            <Link href="/nomination" style={{
-              marginTop: 24,
-              padding: "10px 24px",
+            <Link href="/season-reveal" style={{
+              marginTop: 32,
+              padding: "18px 48px",
               background: "linear-gradient(45deg, #fbbf24, #f59e0b)",
               color: "#000",
               textDecoration: "none",
-              borderRadius: 12,
-              fontSize: 13,
-              fontWeight: 800,
+              borderRadius: "18px",
+              fontSize: "18px",
+              fontWeight: 950,
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              boxShadow: "0 10px 20px -5px rgba(245, 158, 11, 0.4)",
-              transition: "all 0.2s"
+              gap: 12,
+              boxShadow: "0 20px 40px -10px rgba(245, 158, 11, 0.6)",
+              transition: "all 0.2s",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              border: "2px solid #fff"
             }}>
-              <Trophy size={16} />
-              A-TEAM NOMINIERUNG
-            </Link>
-
-            <Link href="/season-reveal" style={{
-              marginTop: 24,
-              padding: "10px 24px",
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: 12,
-              fontSize: 13,
-              fontWeight: 800,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              backdropFilter: "blur(10px)",
-              transition: "all 0.2s"
-            }}>
-              <Users size={16} />
-              SAISON-COUNTDOWN STARTEN
+              <Trophy size={24} />
+              GROSSES SAISON-FINALE STARTEN
             </Link>
           </div>
 
