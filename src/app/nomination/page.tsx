@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Trophy, Star, ArrowLeft, Users } from "lucide-react";
+import { Trophy, ArrowLeft, Users } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -7,12 +7,20 @@ export const dynamic = "force-dynamic";
 async function getNominatedPlayers() {
     const snapshot = await prisma.snapshot.findFirst({
         orderBy: { timestamp: "desc" },
-        include: { values: { orderBy: { rank: "asc" } } }
+        include: { 
+            values: { 
+                where: { 
+                    // Filter out players with veto or explicitly skip Maik Feuerhahn
+                    veto_flag: false,
+                    NOT: { player_name: "Maik Feuerhahn" }
+                },
+                orderBy: { rank: "asc" },
+                take: 6 // Take exactly the top 6 valid players
+            } 
+        }
     });
     
-    // Ranks: 1, 3, 4, 5, 6, 8
-    const selectedRanks = [1, 3, 4, 5, 6, 8];
-    return snapshot?.values.filter(v => selectedRanks.includes(v.rank)) || [];
+    return snapshot?.values || [];
 }
 
 export default async function NominationPage() {
@@ -28,7 +36,7 @@ export default async function NominationPage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center" // Center content vertically
+            justifyContent: "center"
         }}>
             <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes cardAppear {
@@ -41,7 +49,7 @@ export default async function NominationPage() {
                 }
             ` }} />
 
-            {/* Header Area - Much smaller */}
+            {/* Header Area */}
             <div style={{ textAlign: "center", marginBottom: "30px" }}>
                 <div style={{ 
                     display: "inline-flex", 
@@ -64,14 +72,14 @@ export default async function NominationPage() {
                     DAS <span style={{ color: "#38bdf8" }}>A-TEAM</span>
                 </h1>
                 <p style={{ color: "#94a3b8", fontSize: "14px", marginTop: 5, fontWeight: 500 }}>
-                    SAISON 2025/26 • DIE TOP QUALIFIZIERTEN
+                    SAISON 2025/26 • DIE QUALIFIZIERTEN
                 </p>
             </div>
 
             {/* Compact Grid Layout */}
             <div style={{ 
                 display: "grid", 
-                gridTemplateColumns: "repeat(3, 1fr)", // Force 3 columns
+                gridTemplateColumns: "repeat(3, 1fr)", 
                 gap: "16px", 
                 width: "100%", 
                 maxWidth: "1000px",
@@ -84,46 +92,27 @@ export default async function NominationPage() {
                         style={{
                             animationDelay: `${index * 5}s`,
                             background: "rgba(15, 23, 42, 0.6)",
-                            border: `1px solid ${player.rank === 1 ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`,
+                            border: "1px solid rgba(255,255,255,0.1)", // Consistent border
                             borderRadius: "20px",
                             padding: "20px",
                             textAlign: "center",
                             backdropFilter: "blur(20px)",
                             position: "relative",
-                            overflow: "hidden",
-                            boxShadow: player.rank === 1 ? "0 10px 30px -10px rgba(251, 191, 36, 0.3)" : "none"
+                            overflow: "hidden"
                         }}
                     >
-                        {player.rank === 1 && (
-                            <div style={{ position: "absolute", top: 12, right: 12, color: "#fbbf24" }}>
-                                <Star fill="#fbbf24" size={16} />
-                            </div>
-                        )}
-                        
-                        <div style={{ 
-                            fontSize: "32px", 
-                            fontWeight: 900, 
-                            color: "rgba(255,255,255,0.03)", 
-                            position: "absolute", 
-                            top: 5, 
-                            left: 12,
-                            fontStyle: "italic" 
-                        }}>
-                            #{player.rank}
-                        </div>
-
                         <div style={{ 
                             width: "48px", 
                             height: "48px", 
-                            background: player.rank === 1 ? "linear-gradient(45deg, #fbbf24, #f59e0b)" : "rgba(56, 189, 248, 0.1)", 
+                            background: "rgba(56, 189, 248, 0.1)", 
                             borderRadius: "14px", 
                             display: "flex", 
                             alignItems: "center", 
                             justifyContent: "center",
                             margin: "0 auto 12px",
-                            color: player.rank === 1 ? "#000" : "#38bdf8"
+                            color: "#38bdf8"
                         }}>
-                            {player.rank === 1 ? <Trophy size={24} /> : <Users size={24} />}
+                            <Users size={24} />
                         </div>
 
                         <h2 style={{ fontSize: "18px", fontWeight: 800, marginBottom: 4, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -131,7 +120,7 @@ export default async function NominationPage() {
                         </h2>
                         
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                            <div style={{ fontSize: "24px", fontWeight: 950, color: player.rank === 1 ? "#fbbf24" : "#38bdf8" }}>
+                            <div style={{ fontSize: "24px", fontWeight: 950, color: "#38bdf8" }}>
                                 {player.total_points.toFixed(2)}
                             </div>
                             <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700, textTransform: "uppercase", textAlign: "left", lineHeight: 1 }}>
