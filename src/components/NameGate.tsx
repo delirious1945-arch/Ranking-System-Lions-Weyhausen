@@ -43,10 +43,15 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                     setAllowedNames(names);
 
                     const stored = localStorage.getItem(STORAGE_KEY);
-                    if (stored && names.some((n: string) => normalize(n) === normalize(stored))) {
+                    const role = localStorage.getItem('lions-auth-role');
+                    
+                    if (stored && role === 'admin' && names.some((n: string) => normalize(n) === normalize(stored))) {
                         setAuthed(true);
                     } else {
-                        if (stored) localStorage.removeItem(STORAGE_KEY);
+                        if (stored) {
+                            localStorage.removeItem(STORAGE_KEY);
+                            localStorage.removeItem('lions-auth-role');
+                        }
                         setAuthed(false);
                     }
                 }
@@ -84,18 +89,22 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                 setLoading(false);
                 return;
             }
+
+            if (data.role !== 'admin') {
+                setError('Zugriff verweigert: Nur Administratoren haben aktuell Zugriff.');
+                setLoading(false);
+                return;
+            }
+
             if (data.mustChange) {
                 setMustChange(true);
                 setChangeName(match);
                 setLoading(false);
                 return;
             }
+
             localStorage.setItem(STORAGE_KEY, match);
-            if (data.role) {
-                localStorage.setItem('lions-auth-role', data.role);
-            } else {
-                localStorage.setItem('lions-auth-role', 'viewer');
-            }
+            localStorage.setItem('lions-auth-role', data.role);
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');
@@ -133,12 +142,13 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                 return;
             }
             // Success — log the user in
-            localStorage.setItem(STORAGE_KEY, changeName);
-            if (data.role) {
-                localStorage.setItem('lions-auth-role', data.role);
-            } else {
-                localStorage.setItem('lions-auth-role', 'viewer');
+            if (data.role !== 'admin') {
+                setError('Zugriff verweigert: Nur Administratoren gestattet.');
+                setLoading(false);
+                return;
             }
+            localStorage.setItem(STORAGE_KEY, changeName);
+            localStorage.setItem('lions-auth-role', data.role);
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');
