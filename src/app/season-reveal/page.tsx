@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Trophy, ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
+import { RedirectTimer } from "@/components/RedirectTimer"; // We will create this
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +36,11 @@ export default async function SeasonRevealPage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            overflow: "hidden" // Prevent overall page scroll to keep focus
+            overflow: "hidden"
         }}>
+            {/* Client-side Timer for Redirect */}
+            <RedirectTimer target="/nomination" delay={125000} />
+
             <div style={{
                 position: "fixed",
                 inset: 0,
@@ -68,7 +72,6 @@ export default async function SeasonRevealPage() {
                     width: 100%;
                 }
                 .glow-effect {
-                    /* Only glow for the 5 seconds until the next one arrives */
                     animation: activeCardGlow 5s ease-out forwards;
                 }
                 .winner-final {
@@ -86,7 +89,6 @@ export default async function SeasonRevealPage() {
                     </p>
                 </div>
 
-                {/* Fixed container - the list grows from the top down */}
                 <div style={{ 
                     display: "flex", 
                     flexDirection: "column",
@@ -95,7 +97,6 @@ export default async function SeasonRevealPage() {
                     {allPlayers.map((player) => {
                         const isTop3 = player.rank <= 3;
                         const isWinner = player.rank === 1;
-                        // Delay: Rank 19 has 0s, Rank 18 has 5s, etc.
                         const delay = (totalPlayers - player.rank) * 5;
                         
                         return (
@@ -182,15 +183,6 @@ export default async function SeasonRevealPage() {
                     </Link>
                 </div>
             </div>
-            
-            {/* Automatic Redirect to Nomination after animation + 60s buffer */}
-            <script dangerouslySetInnerHTML={{ __html: `
-                // Total animation time: (19 players * 5s) = 95s
-                // Plus 60s buffer as requested = 155s total from start
-                setTimeout(() => {
-                    window.location.href = '/nomination';
-                }, 155000);
-            ` }} />
         </div>
     );
 }
