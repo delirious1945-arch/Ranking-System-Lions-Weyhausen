@@ -70,10 +70,10 @@ export default async function NominationPage() {
                     letterSpacing: "0.1em",
                     marginBottom: 10
                 }}>
-                    <Trophy size={12} /> OFFIZIELLE NOMINIERUNG
+                    <Trophy size={12} /> DAS A-TEAM
                 </div>
                 <h1 style={{ fontSize: "42px", fontWeight: 950, margin: 0, textTransform: "uppercase", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                    DAS <span style={{ color: "#38bdf8" }}>A-TEAM</span>
+                    OFFIZIELLE <span style={{ color: "#38bdf8" }}>NOMINIERUNG</span>
                 </h1>
                 <p style={{ color: "#94a3b8", fontSize: "14px", marginTop: 5, fontWeight: 500 }}>
                     SAISON 2025/26 • DIE QUALIFIZIERTEN
