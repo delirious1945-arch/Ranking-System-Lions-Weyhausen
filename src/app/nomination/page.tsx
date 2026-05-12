@@ -137,14 +137,12 @@ export default async function NominationPage() {
                             paddingTop: 12, 
                             borderTop: "1px solid rgba(255,255,255,0.05)",
                             display: "flex",
-                            justifyContent: "center",
-                            gap: 12,
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 4,
                             fontSize: "11px",
                             color: "#94a3b8",
-                            fontWeight: 600,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 4
+                            fontWeight: 600
                         }}>
                             <div>AVG: <span style={{ color: "#fff" }}>{player.avg_total.toFixed(1)}</span></div>
                             <div>
