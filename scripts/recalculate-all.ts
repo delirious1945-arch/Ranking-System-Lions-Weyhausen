@@ -1,5 +1,5 @@
-import { prisma } from '../src/lib/prisma';
-import * as scoring from '../src/lib/scoring';
+import { prisma } from '../src/lib/prisma.ts';
+import * as scoring from '../src/lib/scoring.ts';
 import fs from 'fs';
 import path from 'path';
 
@@ -39,12 +39,47 @@ async function main() {
         } as any;
     }
 
+    // Step 1: Pre-calculate attendance for all players
+    console.log('Berechne Anwesenheit (Matchtage) für alle Spieler...');
+    const attendanceMap: Record<string, number> = {};
+
+    // From MatchRecords
+    const matchRecords = await prisma.matchRecord.findMany({
+        select: { playerName: true, spieltag: true }
+    });
+    const playerMatchdays = new Map<string, Set<number>>();
+    matchRecords.forEach(mr => {
+        if (!playerMatchdays.has(mr.playerName)) playerMatchdays.set(mr.playerName, new Set());
+        playerMatchdays.get(mr.playerName)!.add(mr.spieltag);
+    });
+
+    // From ManualGames
+    const manualGames = await prisma.manualGame.findMany({
+        select: { player_name: true, date: true }
+    });
+    manualGames.forEach(mg => {
+        if (!playerMatchdays.has(mg.player_name)) playerMatchdays.set(mg.player_name, new Set());
+        // Map date to a pseudo-spieltag or just use date string
+        const dateStr = mg.date.toISOString().split('T')[0];
+        // We use a negative number or hash to avoid collision with numeric spieltags if needed, 
+        // but unique is unique.
+        (playerMatchdays.get(mg.player_name)! as any).add(dateStr); 
+    });
+
+    for (const [name, days] of playerMatchdays.entries()) {
+        attendanceMap[name] = days.size;
+        console.log(`- ${name}: ${days.size} Tage`);
+    }
+
     const allValues = await prisma.snapshotPlayerValue.findMany();
     console.log(`${allValues.length} Spieler-Einträge gefunden.`);
 
     let updatedCount = 0;
 
     for (const v of allValues) {
+        const playedDays = attendanceMap[v.player_name] || 0;
+        const multiplier = scoring.calculateAttendanceMultiplier(v.player_name, playedDays);
+
         const newK1 = scoring.calculatePointsK1toK3(v.avg_total);
         const newK2 = scoring.calculatePointsK1toK3(v.avg_9);
         const newK3 = scoring.calculatePointsK1toK3(v.avg_18);
@@ -55,7 +90,7 @@ async function main() {
             (newK1 * config!.weight_k1) +
             (newK2 * config!.weight_k2) +
             (newK3 * config!.weight_k3) +
-            (newK4 * config!.weight_k4) +
+            ((newK4 * multiplier) * config!.weight_k4) +
             (newK5 * config!.weight_k5);
 
         const newTotal = Math.round(weighted_sum * 5 * 100) / 100;

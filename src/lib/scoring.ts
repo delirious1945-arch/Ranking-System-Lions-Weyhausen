@@ -1,5 +1,27 @@
 import { DEFAULT_WEIGHTS } from "./lions-config";
 
+/**
+ * Calculates the attendance multiplier based on the player name and number of played days.
+ * Total season is 18 matchdays.
+ */
+export function calculateAttendanceMultiplier(playerName: string, playedDaysCount: number): number {
+  let maxPossible = 18;
+  
+  // Handle late starters
+  if (playerName === "Jochen Michael") maxPossible = 1; // Started at 18/18
+  if (playerName === "Erik Schremmer" || playerName === "Jannik Baier") maxPossible = 13; // Started at 6/18
+  
+  // Safe check
+  if (playedDaysCount > maxPossible) playedDaysCount = maxPossible;
+  
+  const attendancePct = (playedDaysCount / maxPossible) * 100;
+  
+  if (attendancePct >= 85) return 1.5;
+  if (attendancePct >= 70) return 1.3;
+  if (attendancePct >= 50) return 1.2;
+  return 1.0;
+}
+
 export function validateValue(value: number, min: number, max: number): boolean {
   return value >= min && value <= max;
 }
@@ -89,20 +111,26 @@ export interface PlayerComputedData extends PlayerRawData {
  */
 export function calculateWeightedTotal(
   points: { p1: number; p2: number; p3: number; p4: number; p5: number },
-  weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS
+  weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS,
+  multiplier: number = 1.0
 ): number {
   const rawSum = 
     (points.p1 * weights.weight_k1) +
     (points.p2 * weights.weight_k2) +
     (points.p3 * weights.weight_k3) +
-    (points.p4 * weights.weight_k4) +
+    ((points.p4 * multiplier) * weights.weight_k4) +
     (points.p5 * weights.weight_k5);
     
   // Multiply by 5 and round to 2 decimal places to match current frontend expectations
   return Math.round(rawSum * 5 * 100) / 100;
 }
 
-export function aggregatePlayerData(records: PlayerRawData[], weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS): PlayerComputedData {
+export function aggregatePlayerData(
+  records: PlayerRawData[], 
+  weights: typeof DEFAULT_WEIGHTS = DEFAULT_WEIGHTS,
+  playedDaysCount: number = 18,
+  playerName: string = ""
+): PlayerComputedData {
   if (records.length === 0) throw new Error("No data to aggregate");
 
   const meta = records.map(r => ({
@@ -172,9 +200,12 @@ export function aggregatePlayerData(records: PlayerRawData[], weights: typeof DE
   const points_k4 = calculatePointsK4(siegequote_pct);
   const points_k5 = calculatePointsK5(avg_high_per_leg);
 
+  const multiplier = calculateAttendanceMultiplier(playerName || records[0].team, playedDaysCount);
+
   const total_points = calculateWeightedTotal(
     { p1: points_k1, p2: points_k2, p3: points_k3, p4: points_k4, p5: points_k5 },
-    weights
+    weights,
+    multiplier
   );
 
   return {
