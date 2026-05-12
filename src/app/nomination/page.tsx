@@ -12,7 +12,11 @@ async function getNominatedPlayers() {
                 where: { 
                     // Filter out players with veto or explicitly skip Maik Feuerhahn
                     veto_flag: false,
-                    NOT: { player_name: "Maik Feuerhahn" }
+                    NOT: { 
+                        player_name: { 
+                            in: ["Maik Feuerhahn", "Timo Feuerhahn"] 
+                        } 
+                    }
                 },
                 orderBy: { rank: "asc" },
                 take: 6 // Take exactly the top 6 valid players
