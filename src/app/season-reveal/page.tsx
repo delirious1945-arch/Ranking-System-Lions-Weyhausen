@@ -5,7 +5,7 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 const attendanceMap: Record<string, string> = {
-    "Sebastian Kirste": "100%", "Timo Feuerhahn": "50,0%", "Jens Goltermann": "100%", "Erik Schremmer": "54,5%",
+    "Sebastian Kirste": "100%", "Timo Feuerhahn": "50,0%", "Jens Goltermann": "100%", "Erik Schremmer": "60,0%",
     "Nicholas Stedman": "93,8%", "Kevin Emde": "68,8%", "Maik Feuerhahn": "37,5%", "Dirk Ostermann": "87,5%",
     "Jannik Baier": "63,6%", "Michael Kranz": "81,3%", "André Rathje": "93,8%", "Michael Gehrt": "87,5%",
     "Karen Schulz": "50,0%", "Jochen Michael": "100%", "Joachim Koch": "31,3%", "Martin Wolnik": "31,3%",

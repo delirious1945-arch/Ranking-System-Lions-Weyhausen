@@ -9,12 +9,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Manual attendance percentages as provided by user
 const manualAttendance = {
     "Sebastian Kirste": 100,
     "Timo Feuerhahn": 50,
     "Jens Goltermann": 100,
-    "Erik Schremmer": 54.54,
+    "Erik Schremmer": 60,
     "Nicholas Stedman": 93.8,
     "Kevin Emde": 68.8,
     "Maik Feuerhahn": 37.5,
@@ -82,10 +81,13 @@ function calculatePointsK5(avgHighPerLeg) {
 }
 
 async function main() {
-  console.log('--- Starte Finale Neuberechnung mit manuellen Quoten ---');
+  console.log('--- Starte Finale Neuberechnung (Weights 45%, Erik 60%) ---');
 
-  const configRes = await pool.query('SELECT * FROM "RankingConfig" WHERE id = 1');
-  const config = configRes.rows[0] || { weight_k1: 0.2, weight_k2: 0.15, weight_k3: 0.15, weight_k4: 0.25, weight_k5: 0.25 };
+  // Update RankingConfig in DB first
+  await pool.query('UPDATE "RankingConfig" SET weight_k1=0.20, weight_k2=0.10, weight_k3=0.10, weight_k4=0.45, weight_k5=0.15 WHERE id=1');
+  console.log('Gewichtung in DB auf K4=45% aktualisiert.');
+
+  const config = { weight_k1: 0.20, weight_k2: 0.10, weight_k3: 0.10, weight_k4: 0.45, weight_k5: 0.15 };
 
   const valuesRes = await pool.query('SELECT * FROM "SnapshotPlayerValue"');
   for (const v of valuesRes.rows) {
@@ -106,8 +108,6 @@ async function main() {
       (pk5 * config.weight_k5);
 
     const totalPoints = Math.round(weightedSum * 5 * 100) / 100;
-    
-    console.log(`${v.player_name}: ${pct}% -> Multiplier ${multiplier} -> Points ${totalPoints}`);
 
     await pool.query(
       'UPDATE "SnapshotPlayerValue" SET points_k1=$1, points_k2=$2, points_k3=$3, points_k4=$4, points_k5=$5, total_points=$6 WHERE id=$7',
@@ -115,7 +115,7 @@ async function main() {
     );
   }
 
-  // 4. Recalculate Ranks
+  // Recalculate Ranks
   const snapshotsRes = await pool.query('SELECT DISTINCT "snapshot_id" FROM "Snapshot"');
   for (const snap of snapshotsRes.rows) {
     const snapValues = await pool.query(

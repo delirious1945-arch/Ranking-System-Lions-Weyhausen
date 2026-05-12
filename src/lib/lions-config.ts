@@ -31,8 +31,8 @@ export const SCRAPE_EVENTS = [
 
 export const DEFAULT_WEIGHTS = {
     weight_k1: 0.20, // Avg Total
-    weight_k2: 0.15, // Avg 9-Dart
-    weight_k3: 0.15, // Avg 18-Dart
-    weight_k4: 0.25, // Siegquote
-    weight_k5: 0.25, // High Scores per Leg
+    weight_k2: 0.10, // Avg 9-Dart
+    weight_k3: 0.10, // Avg 18-Dart
+    weight_k4: 0.45, // Siegquote
+    weight_k5: 0.15, // High Scores per Leg
 };
