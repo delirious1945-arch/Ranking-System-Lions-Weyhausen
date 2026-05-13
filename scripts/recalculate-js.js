@@ -3,7 +3,6 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const pg = require('pg');
 require('dotenv').config();
 
-// Re-implementing scoring logic from scoring.ts
 function calculatePointsK1toK3(avg) {
   if (!avg || avg <= 0) return 0;
   if (avg >= 100) return 100;
@@ -22,12 +21,13 @@ function calculatePointsK5(highScorePerLeg) {
 }
 
 function calculateAttendanceMultiplier(name, playedDays) {
-  // Simple multiplier logic: if played 0 days, multiplier is 0
-  // If played >= 10 days, multiplier is 1.0
-  // Otherwise linear scaling
-  if (playedDays >= 10) return 1.0;
-  if (playedDays <= 0) return 0.5; // Base line
-  return 0.5 + (playedDays * 0.05);
+  const totalMatchdays = 16;
+  const percentage = (playedDays / totalMatchdays) * 100;
+
+  if (percentage >= 85) return 1.5;
+  if (percentage >= 70) return 1.3;
+  if (percentage >= 50) return 1.2;
+  return 1.0;
 }
 
 async function main() {
@@ -40,12 +40,10 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   try {
-    console.log('--- Starte JS-Neuberechnung ---');
+    console.log('--- Starte Neuberechnung mit Anwesenheits-Faktor (1.5 / 1.3 / 1.2) ---');
     
     const config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
-    console.log('Current Config:', config);
 
-    // Step 1: Attendance
     const attendanceMap = {};
     const matchRecords = await prisma.matchRecord.findMany({ select: { playerName: true, spieltag: true } });
     matchRecords.forEach(mr => {
@@ -78,7 +76,8 @@ async function main() {
         ((pk4 * multiplier) * config.weight_k4) +
         (pk5 * config.weight_k5);
 
-      const newTotal = Math.round(weighted * 5 * 100) / 100;
+      // NO FACTOR 5 ANYMORE
+      const newTotal = Math.round(weighted * 100) / 100;
 
       await prisma.snapshotPlayerValue.update({
         where: { id: v.id },
@@ -86,14 +85,13 @@ async function main() {
           points_k1: pk1,
           points_k2: pk2,
           points_k3: pk3,
-          points_k4: pk4,
+          points_k4: pk4, // Note: We store the raw points K4, the multiplier is in weighted sum
           points_k5: pk5,
           total_points: newTotal
         }
       });
     }
 
-    // Step 2: Rerank
     const snapshots = await prisma.snapshot.findMany({ select: { snapshot_id: true } });
     for (const snap of snapshots) {
       const values = await prisma.snapshotPlayerValue.findMany({
