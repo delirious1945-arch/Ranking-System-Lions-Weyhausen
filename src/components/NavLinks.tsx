@@ -13,12 +13,10 @@ export default function NavLinks() {
 
     useEffect(() => {
         const role = localStorage.getItem('lions-auth-role');
-        const name = localStorage.getItem('lions-auth-name');
-        
-        if (role === 'admin' && name === 'Sebastian Kirste') {
+        if (role === 'admin') {
             setIsAdmin(true);
         }
-    }, [path]); // Re-eval on path changes to catch login events if they happened to navigate
+    }, [path]);
 
     const items = [...NAV_ITEMS];
     if (isAdmin) {

@@ -1,8 +1,9 @@
-// Final Build Trigger - Force Sync
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Trophy, Users } from "lucide-react";
-
+import { Trophy, Users, Search } from "lucide-react";
+import { cookies } from "next/headers";
+import RankingTable from "@/components/RankingTable";
+import SnapshotSelector from "@/components/SnapshotSelector";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -31,7 +32,6 @@ async function getData(selectedWeek?: string, selectedId?: string) {
   }
 
   if (snapshot) {
-    // Try to find the latest snapshot of a DIFFERENT week_id
     previousSnapshot = await prisma.snapshot.findFirst({
       where: {
         week_id: { notIn: [snapshot.week_id, "Saison 2025/26 - Final"] },
@@ -41,7 +41,6 @@ async function getData(selectedWeek?: string, selectedId?: string) {
       include: { values: true }
     });
 
-    // Fallback: If no different week found, just take any older snapshot
     if (!previousSnapshot) {
       previousSnapshot = await prisma.snapshot.findFirst({
         where: {
@@ -82,8 +81,6 @@ const TABS = [
   { id: "k5", label: "HighScore/Leg" },
 ];
 
-
-
 export default async function DashboardPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const selectedId = typeof params.id === 'string' ? params.id : undefined;
@@ -93,14 +90,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const { snapshot, previousSnapshot, allSnapshots, vetoSet } = await getData(selectedWeek, selectedId);
   const allValues: any[] = snapshot?.values ?? [];
   const prevValues: any[] = previousSnapshot?.values ?? [];
-  
   const prevRankMap = new Map(prevValues.map(v => [v.player_name, v.rank]));
 
-  const eligible = allValues.filter(v => !vetoSet.has(v.player_name));
-
-  const lastUpdated = snapshot?.timestamp
-    ? new Date(snapshot.timestamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
-    : null;
+  const cookieStore = await cookies();
+  const isAdmin = cookieStore.get("lions-auth-role")?.value === "admin";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -123,7 +116,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         width: "100%",
         maxWidth: "100%",
       }}>
-        {/* Dynamic Neon Background */}
         <div style={{
           position: "absolute",
           inset: 0,
@@ -137,7 +129,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           zIndex: 0,
         }} />
 
-        {/* Subtle top gradient for text readability */}
         <div style={{
           position: "absolute",
           top: 0, left: 0, right: 0, height: "40%",
@@ -145,22 +136,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           zIndex: 1,
         }} />
 
-        {/* Content */}
         <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", height: "100%", maxWidth: "100%" }}>
-
-          {/* Top Text */}
           <h1 style={{
             margin: "0 0 4px",
-            fontFamily: "var(--font-inter), Inter, sans-serif",
             fontSize: "clamp(24px, 8vw, 56px)",
             fontWeight: 900,
             letterSpacing: "0.02em",
             color: "#ffffff",
             lineHeight: 1.1,
             textTransform: "uppercase",
-            textShadow: "0 4px 20px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.2)",
-            wordBreak: "break-word",
-            maxWidth: "100%"
+            textShadow: "0 4px 20px rgba(0,0,0,0.8)",
           }}>
             SAISON 2025/26
           </h1>
@@ -171,88 +156,93 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             fontWeight: 600,
             letterSpacing: "0.15em",
             textTransform: "uppercase",
-            textShadow: "0 2px 10px rgba(0,0,0,0.9)",
-            maxWidth: "100%",
-            wordBreak: "break-word",
           }}>
             ABSCHLUSSRANKING - FINAL
           </p>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-            <Link href="/season-reveal" style={{
-              marginTop: 32,
-              padding: "18px 48px",
-              background: "linear-gradient(45deg, #fbbf24, #f59e0b)",
-              color: "#000",
-              textDecoration: "none",
-              borderRadius: "18px",
-              fontSize: "18px",
-              fontWeight: 950,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              boxShadow: "0 20px 40px -10px rgba(245, 158, 11, 0.6)",
-              transition: "all 0.2s",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              border: "2px solid #fff"
-            }}>
-              <Trophy size={24} />
-              GROSSES SAISON-FINALE STARTEN
-            </Link>
+          <Link href="/season-reveal" style={{
+            marginTop: 32,
+            padding: "18px 48px",
+            background: "linear-gradient(45deg, #fbbf24, #f59e0b)",
+            color: "#000",
+            textDecoration: "none",
+            borderRadius: "18px",
+            fontSize: "18px",
+            fontWeight: 950,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            boxShadow: "0 20px 40px -10px rgba(245, 158, 11, 0.6)",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            border: "2px solid #fff"
+          }}>
+            <Trophy size={24} />
+            GROSSES SAISON-FINALE STARTEN
+          </Link>
+        </div>
+      </div>
+
+      {!isAdmin ? (
+        <div style={{
+          padding: "60px 20px",
+          background: "rgba(15, 23, 42, 0.4)",
+          border: "1px dashed rgba(56, 189, 248, 0.2)",
+          borderRadius: 24,
+          textAlign: "center",
+          backdropFilter: "blur(10px)",
+          marginTop: 20
+        }}>
+          <div style={{ 
+            width: 60, 
+            height: 60, 
+            background: "rgba(56, 189, 248, 0.1)", 
+            borderRadius: "50%", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            margin: "0 auto 20px",
+            color: "#38bdf8"
+          }}>
+            <Trophy size={32} />
+          </div>
+          <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 10, color: "#fff" }}>ERGEBNISSE GESPERRT</h3>
+          <p style={{ color: "#94a3b8", maxWidth: 400, margin: "0 auto", fontSize: 14, lineHeight: 1.6 }}>
+            Die finalen Platzierungen der Saison 2025/26 sind momentan unter Verschluss. 
+            Starte das <strong>Saison-Finale</strong> oben, um die Rangliste live zu enthüllen!
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.03)", padding: 4, borderRadius: 14, border: "1px solid rgba(255,255,255,0.05)" }}>
+              {TABS.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={`/?tab=${tab.id}${selectedWeek ? `&week=${selectedWeek}` : ""}${selectedId ? `&id=${selectedId}` : ""}`}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    color: activeTab === tab.id ? "#fff" : "#64748b",
+                    background: activeTab === tab.id ? "rgba(56, 189, 248, 0.2)" : "transparent",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </div>
+            <SnapshotSelector snapshots={allSnapshots} currentWeek={snapshot?.week_id} currentId={snapshot?.snapshot_id} />
           </div>
 
-        </div>
-      </div>
-
-      {/* Highlights removed */}
-
-
-
-      {allValues.length === 0 && (
-        <div style={{
-          padding: 16,
-          background: "var(--amber-muted)",
-          border: "1px solid var(--amber)",
-          borderRadius: 8,
-          fontSize: 13,
-          color: "var(--amber)",
-          textAlign: "center"
-        }}>
-          ⚠ Keine Daten für diesen Zeitraum.
-        </div>
+          <RankingTable players={allValues} prevRankMap={prevRankMap} activeTab={activeTab} />
+        </>
       )}
-
-      {/* Spoiler Protection: Hide results during Finale */}
-      <div style={{
-        padding: "60px 20px",
-        background: "rgba(15, 23, 42, 0.4)",
-        border: "1px dashed rgba(56, 189, 248, 0.2)",
-        borderRadius: 24,
-        textAlign: "center",
-        backdropFilter: "blur(10px)",
-        marginTop: 20
-      }}>
-        <div style={{ 
-          width: 60, 
-          height: 60, 
-          background: "rgba(56, 189, 248, 0.1)", 
-          borderRadius: "50%", 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          margin: "0 auto 20px",
-          color: "#38bdf8"
-        }}>
-          <Trophy size={32} />
-        </div>
-        <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 10, color: "#fff" }}>ERGEBNISSE GESPERRT</h3>
-        <p style={{ color: "#94a3b8", maxWidth: 400, margin: "0 auto", fontSize: 14, lineHeight: 1.6 }}>
-          Die finalen Platzierungen der Saison 2025/26 sind momentan unter Verschluss. 
-          Starte das <strong>Saison-Finale</strong> oben, um die Rangliste live zu enthüllen!
-        </p>
-      </div>
 
     </div>
   );
 }
+
