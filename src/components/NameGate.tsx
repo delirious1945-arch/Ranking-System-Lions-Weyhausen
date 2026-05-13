@@ -46,6 +46,8 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
                     const role = localStorage.getItem('lions-auth-role');
                     
                     if (stored && role === 'admin' && names.some((n: string) => normalize(n) === normalize(stored))) {
+                        // Ensure cookie is also set for server components
+                        document.cookie = `lions-auth-role=${role}; path=/; max-age=31536000`;
                         setAuthed(true);
                     } else {
                         if (stored) {
@@ -105,6 +107,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
 
             localStorage.setItem(STORAGE_KEY, match);
             localStorage.setItem('lions-auth-role', data.role);
+            document.cookie = `lions-auth-role=${data.role}; path=/; max-age=31536000`;
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');
@@ -149,6 +152,7 @@ export default function NameGate({ children }: { children: React.ReactNode }) {
             }
             localStorage.setItem(STORAGE_KEY, changeName);
             localStorage.setItem('lions-auth-role', data.role);
+            document.cookie = `lions-auth-role=${data.role}; path=/; max-age=31536000`;
             setAuthed(true);
         } catch {
             setError('Verbindungsfehler');
