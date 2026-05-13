@@ -65,7 +65,7 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   try {
-    console.log('--- Starte Neuberechnung gemäß NEUER LEGENDE (0-10 Pkt, Faktor 10) ---');
+    console.log('--- Starte Neuberechnung mit FALLBACK-Anwesenheit (games/2) ---');
     
     const config = await prisma.rankingConfig.findUnique({ where: { id: 1 } });
 
@@ -85,10 +85,17 @@ async function main() {
     console.log(`${allValues.length} Einträge werden verarbeitet...`);
 
     for (const v of allValues) {
-      // FIX for Erik and Jannik attendance as requested earlier
+      // Logic: Use attendanceMap size, but fallback to games_played / 2 if 0 or low
       let playedDays = attendanceMap[v.player_name] ? attendanceMap[v.player_name].size : 0;
-      if (v.player_name === 'Erik Schremmer') playedDays = 10; // ~62%
-      if (v.player_name === 'Jannik Baier') playedDays = 12; // ~75%
+      
+      // Fallback logic for players with no detailed match records but existing games_played
+      if (playedDays === 0 || playedDays < (v.games_played / 2)) {
+          playedDays = Math.ceil(v.games_played / 2);
+      }
+
+      // Explicit overrides for Erik and Jannik as requested
+      if (v.player_name === 'Erik Schremmer') playedDays = 10; // ~62% -> 1.2x
+      if (v.player_name === 'Jannik Baier') playedDays = 12; // ~75% -> 1.3x
 
       const multiplier = calculateAttendanceMultiplier(v.player_name, playedDays);
 
@@ -105,8 +112,9 @@ async function main() {
         ((pk4 * multiplier) * config.weight_k4) +
         (pk5 * config.weight_k5);
 
-      // Final total is weighted sum (0-10+) multiplied by 10
       const newTotal = Math.round(weighted * 10 * 100) / 100;
+
+      console.log(`Player: ${v.player_name} | PlayedDays: ${playedDays} | Mult: ${multiplier} | Total: ${newTotal}`);
 
       await prisma.snapshotPlayerValue.update({
         where: { id: v.id },
@@ -134,7 +142,7 @@ async function main() {
         });
       }
     }
-    console.log('--- Neuberechnung gemäß Legende abgeschlossen ---');
+    console.log('--- Neuberechnung abgeschlossen ---');
   } catch (err) {
     console.error(err);
   } finally {
