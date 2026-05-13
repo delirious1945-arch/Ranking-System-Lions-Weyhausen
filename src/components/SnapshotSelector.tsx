@@ -9,11 +9,12 @@ interface Snapshot {
 }
 
 interface SnapshotSelectorProps {
-    allSnapshots: Snapshot[];
-    currentId?: string;
+    snapshots: Snapshot[];
+    currentWeek?: string;
+    currentId?: number | string;
 }
 
-export default function SnapshotSelector({ allSnapshots, currentId }: SnapshotSelectorProps) {
+export default function SnapshotSelector({ snapshots, currentWeek, currentId }: SnapshotSelectorProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -41,7 +42,7 @@ export default function SnapshotSelector({ allSnapshots, currentId }: SnapshotSe
                     outline: "none"
                 }}
             >
-                {allSnapshots.map(s => (
+                {snapshots.map(s => (
                     <option key={s.snapshot_id} value={s.snapshot_id}>
                         {s.week_id}
                     </option>
