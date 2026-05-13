@@ -15,9 +15,9 @@ export default function MatrixExplanation({ onStart }: { onStart: () => void }) 
 
     const categories = [
         { icon: <BarChart3 className="text-blue-400" />, label: '∅ Average', weight: '20%', desc: 'Der Durchschnittswert aller geworfenen Darts.' },
-        { icon: <Target className="text-purple-400" />, label: '∅ 9/18 Darts', weight: '30%', desc: 'Die Konstanz der ersten 9 bzw. 18 Darts (je 15%).' },
-        { icon: <TrendingUp className="text-emerald-400" />, label: 'Siegquote', weight: '25%', desc: 'Das Verhältnis von gewonnenen zu gespielten Spielen.' },
-        { icon: <Sparkles className="text-amber-400" />, label: 'HighScore/Leg', weight: '25%', desc: 'Die Häufigkeit von hohen Scores (100+, 140+, 180).' },
+        { icon: <Target className="text-purple-400" />, label: '∅ 9/18 Darts', weight: '20%', desc: 'Die Konstanz der ersten 9 bzw. 18 Darts (je 10%).' },
+        { icon: <TrendingUp className="text-emerald-400" />, label: 'Siegquote', weight: '45%', desc: 'Das Verhältnis von gewonnenen zu gespielten Spielen.' },
+        { icon: <Sparkles className="text-amber-400" />, label: 'HighScore/Leg', weight: '15%', desc: 'Die Häufigkeit von hohen Scores (100+, 140+, 180).' },
     ];
 
     return (
